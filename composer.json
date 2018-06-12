@@ -1,0 +1,20 @@
+{
+  "description": "Neos integration for pixx.io",
+  "type": "neos-package",
+  "name": "flownative/pixxio",
+  "license": "MIT",
+  "require": {
+    "neos/flow": "5.* || dev-master",
+    "guzzlehttp/guzzle": "6.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Flownative\\Pixxio\\": "Classes/"
+    }
+  },
+  "extra": {
+    "neos": {
+      "package-key": "Flownative.Pixxio"
+    }
+  }
+}

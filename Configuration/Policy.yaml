@@ -1,0 +1,19 @@
+#
+# Security policy for the Flownative Pixx.io package
+#
+
+privilegeTargets:
+
+  'Neos\Flow\Security\Authorization\Privilege\Method\MethodPrivilege':
+
+
+    'Flownative.Pixxio:ManageConnection':
+      matcher: 'method(Flownative\Pixxio\Controller\PixxioController->(index|updateRefreshToken)Action())'
+
+roles:
+
+  'Neos.Neos:Administrator':
+    privileges:
+      -
+        privilegeTarget: 'Flownative.Pixxio:ManageConnection'
+        permission: GRANT

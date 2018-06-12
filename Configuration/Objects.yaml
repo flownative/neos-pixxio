@@ -1,0 +1,9 @@
+Flownative\Pixxio\AssetSource\PixxioAssetProxyRepository:
+  properties:
+    assetProxyCache:
+      object:
+        factoryObjectName: Neos\Flow\Cache\CacheManager
+        factoryMethodName: getCache
+        arguments:
+          1:
+            value: Flownative_Pixxio_AssetProxy

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file original="" product-name="Flownative.Pixxio" source-language="en" datatype="plaintext">
+        <body>
+            <trans-unit id="moduleDescription" xml:space="preserve">
+                <source>This module allows you to connect with pixx.io, a cloud-based media asset management service, in order to use remote assets as if they were stored locally in your Neos site.</source>
+            </trans-unit>
+            <trans-unit id="pixxioConnectionSettings" xml:space="preserve">
+                <source>pixx.io connection settings</source>
+            </trans-unit>
+            <trans-unit id="apiEndpointUri" xml:space="preserve">
+                <source>API Endpoint URI</source>
+            </trans-unit>
+            <trans-unit id="refreshToken" xml:space="preserve">
+                <source>Refresh Token</source>
+            </trans-unit>
+            <trans-unit id="updateRefreshToken" xml:space="preserve">
+                <source>Update refresh token</source>
+            </trans-unit>
+            <trans-unit id="pleaseProvideRefreshToken" xml:space="preserve">
+                <source>Please provide your personal refresh token in order to connect with the pixx.io API.</source>
+            </trans-unit>
+            <trans-unit id="whereToFindRefreshTokenHint" xml:space="preserve">
+                <source>You'll find your refresh token in the account settings of your Pixx.io installation.</source>
+            </trans-unit>
+            <trans-unit id="connectionSucceeded" xml:space="preserve">
+                <source>Connection with the pixx.io API succeeded.</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

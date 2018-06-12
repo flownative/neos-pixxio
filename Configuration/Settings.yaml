@@ -1,0 +1,31 @@
+Neos:
+  Flow:
+    mvc:
+      routes:
+        'Flownative.Pixxio':
+          position: 'after Neos.Neos'
+
+  Media:
+    assetSources:
+      'flownative-pixxio':
+        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
+        assetSourceOptions:
+
+          # The customer-specific endpoint URI pointing to the Pixx.io API:
+          # Example: 'https://flownative.pixxio.media/cgi-bin/api/pixxio-api.pl'
+          apiEndpointUri: ''
+
+          # The API key of this Pixx.io integration.
+          # Please get in touch with Pixx.io support in order to get this key.
+          apiKey: ''
+
+  Neos:
+    modules:
+      management:
+        submodules:
+          flownativePixxio:
+            controller: \Flownative\Pixxio\Controller\PixxioController
+            label: 'pixx.io'
+            description: 'Flownative.Pixxio:Main:moduleDescription'
+            icon: 'icon-photo'
+            privilegeTarget: 'Flownative.Pixxio:ManageConnection'

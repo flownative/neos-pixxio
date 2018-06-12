@@ -5,11 +5,12 @@
     <f:form action="updateRefreshToken" method="post">
         <div class="neos-row-fluid">
             <div class="neos-span6">
-                <f:if condition="{refreshToken}">
+                <f:if condition="{sharedRefreshToken}">
                     <f:then>
+                        <p>{neos:backend.translate(id: 'sharedRefreshTokenExists', source: 'Main', package: 'Flownative.Pixxio')}</p>
                     </f:then>
                     <f:else>
-                        <p>{neos:backend.translate(id: 'pleaseProvideRefreshToken', source: 'Main', package: 'Flownative.Pixxio')}<br />
+                        <p>{neos:backend.translate(id: 'providePersonalRefreshToken', source: 'Main', package: 'Flownative.Pixxio')}<br />
                             {neos:backend.translate(id: 'whereToFindRefreshTokenHint', source: 'Main', package: 'Flownative.Pixxio')}</p>
                     </f:else>
                 </f:if>
@@ -21,7 +22,7 @@
                         </div>
                     </div>
                     <div class="neos-control-group">
-                        <label class="neos-control-label" for="refreshToken">{neos:backend.translate(id: 'refreshToken', source: 'Main', package: 'Flownative.Pixxio')}</label>
+                        <label class="neos-control-label" for="refreshToken">{neos:backend.translate(id: 'personalRefreshToken', source: 'Main', package: 'Flownative.Pixxio')}</label>
                         <div class="neos-controls">
                             <f:form.textfield name="refreshToken" id="refreshToken" class="neos-span12" value="{refreshToken}" />
                         </div>

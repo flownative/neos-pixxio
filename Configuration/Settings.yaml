@@ -19,6 +19,10 @@ Neos:
           # Please get in touch with Pixx.io support in order to get this key.
           apiKey: ''
 
+          # A pixx.io user refresh token which is shared across all editors in
+          # this Neos installation.
+          # sharedRefreshToken: ''
+
   Neos:
     modules:
       management:

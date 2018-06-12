@@ -6,22 +6,25 @@
                 <source>This module allows you to connect with pixx.io, a cloud-based media asset management service, in order to use remote assets as if they were stored locally in your Neos site.</source>
             </trans-unit>
             <trans-unit id="pixxioConnectionSettings" xml:space="preserve">
-                <source>pixx.io connection settings</source>
+                <source>pixx.io Connection Settings</source>
             </trans-unit>
             <trans-unit id="apiEndpointUri" xml:space="preserve">
                 <source>API Endpoint URI</source>
             </trans-unit>
-            <trans-unit id="refreshToken" xml:space="preserve">
-                <source>Refresh Token</source>
+            <trans-unit id="personalRefreshToken" xml:space="preserve">
+                <source>Personal Refresh Token</source>
             </trans-unit>
             <trans-unit id="updateRefreshToken" xml:space="preserve">
                 <source>Update refresh token</source>
             </trans-unit>
-            <trans-unit id="pleaseProvideRefreshToken" xml:space="preserve">
-                <source>Please provide your personal refresh token in order to connect with the pixx.io API.</source>
+            <trans-unit id="sharedRefreshTokenExists" xml:space="preserve">
+                <source>A shared refresh token has been defined by the administrator of this Neos installation. You can either use the shared token or provide your own personal refresh token in the form below.</source>
+            </trans-unit>
+            <trans-unit id="providePersonalRefreshToken" xml:space="preserve">
+                <source>Here you can provide your personal refresh token in order to connect with the pixx.io API.</source>
             </trans-unit>
             <trans-unit id="whereToFindRefreshTokenHint" xml:space="preserve">
-                <source>You'll find your refresh token in the account settings of your Pixx.io installation.</source>
+                <source>You'll find your refresh token in the account settings of your pixx.io installation.</source>
             </trans-unit>
             <trans-unit id="connectionSucceeded" xml:space="preserve">
                 <source>Connection with the pixx.io API succeeded.</source>

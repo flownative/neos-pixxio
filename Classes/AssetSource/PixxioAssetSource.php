@@ -13,6 +13,7 @@ namespace Flownative\Pixxio\AssetSource;
  * source code.
  */
 
+use Flownative\Pixxio\Domain\Model\ClientSecret;
 use Flownative\Pixxio\Domain\Repository\ClientSecretRepository;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
@@ -68,6 +69,11 @@ class PixxioAssetSource implements AssetSourceInterface
     private $apiKey;
 
     /**
+     * @var string
+     */
+    private $sharedRefreshToken;
+
+    /**
      * @var PixxioClient
      */
     private $pixxioClient;
@@ -82,7 +88,6 @@ class PixxioAssetSource implements AssetSourceInterface
             throw new \InvalidArgumentException(sprintf('Invalid asset source identifier "%s". The identifier must match /^[a-z][a-z0-9-]{0,62}[a-z]$/', $assetSourceIdentifier), 1525790890);
         }
         $this->assetSourceIdentifier = $assetSourceIdentifier;
-
         foreach ($assetSourceOptions as $optionName => $optionValue) {
             switch ($optionName) {
                 case 'apiEndpointUri':
@@ -94,6 +99,12 @@ class PixxioAssetSource implements AssetSourceInterface
                         throw new \InvalidArgumentException(sprintf('Invalid api key specified for Pixx.io asset source %s', $assetSourceIdentifier), 1525792639);
                     }
                     $this->apiKey = $optionValue;
+                break;
+                case 'sharedRefreshToken':
+                    if (!is_string($optionValue) || empty($optionValue)) {
+                        throw new \InvalidArgumentException(sprintf('Invalid shared refresh token specified for Pixx.io asset source %s', $assetSourceIdentifier), 1528806843);
+                    }
+                    $this->sharedRefreshToken = $optionValue;
                 break;
                 default:
                     throw new \InvalidArgumentException(sprintf('Unknown asset source option "%s" specified for Pixx.io asset source "%s". Please check your settings.', $optionName, $assetSourceIdentifier), 1525790910);
@@ -124,7 +135,7 @@ class PixxioAssetSource implements AssetSourceInterface
      */
     public function getLabel(): string
     {
-        return 'Pixx.io';
+        return 'pixx.io';
     }
 
     /**
@@ -158,7 +169,13 @@ class PixxioAssetSource implements AssetSourceInterface
             $account = $this->securityContext->getAccount();
             $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
 
-            if ($clientSecret === null) {
+            if (($clientSecret === null || $clientSecret->getRefreshToken() === '') && !empty($this->sharedRefreshToken)) {
+                $clientSecret = new ClientSecret();
+                $clientSecret->setRefreshToken($this->sharedRefreshToken);
+                $clientSecret->setFlowAccountIdentifier('shared');
+            }
+
+            if ($clientSecret === null || $clientSecret->getRefreshToken() === '') {
                 throw new MissingClientSecretException(sprintf('No client secret found for account %s. Please set up the pixx.io plugin with the correct credentials.', $account->getAccountIdentifier()), 1526544548);
             }
 

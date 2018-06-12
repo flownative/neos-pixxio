@@ -62,7 +62,7 @@ Neos:
         assetSourceOptions:
           apiEndpointUri: 'https://flownative.pixxio.media/cgi-bin/api/pixxio-api.pl'
           apiKey: 'abcdef123456789'
-          refreshToken: 'A3ZezMq6Q24X314xbaiq5ewNE5q4Gt'
+          sharedRefreshToken: 'A3ZezMq6Q24X314xbaiq5ewNE5q4Gt'
 ```
 
 When you committed and deployed these changes, you can log in to the Neos backend and navigate to the pixx.io backend

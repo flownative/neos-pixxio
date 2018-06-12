@@ -57,20 +57,21 @@ class PixxioController extends AbstractModuleController
     public function indexAction()
     {
         $this->view->assign('apiEndpointUri', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']['apiEndpointUri']);
+        $this->view->assign('sharedRefreshToken', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']['sharedRefreshToken'] ?? null);
 
         $account = $this->securityContext->getAccount();
         $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
         if ($clientSecret !== null && $clientSecret->getRefreshToken()) {
             $this->view->assign('refreshToken', $clientSecret->getRefreshToken());
+        }
 
-            try {
-                $assetSource = new PixxioAssetSource('flownative-pixxio', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']);
-                $client = $assetSource->getPixxioClient();
-                $this->view->assign('connectionSucceeded', true);
-            } catch (MissingClientSecretException $e) {
-            } catch (AuthenticationFailedException $e) {
-                $this->view->assign('authenticationError', $e->getMessage());
-            }
+        try {
+            $assetSource = new PixxioAssetSource('flownative-pixxio', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']);
+            $client = $assetSource->getPixxioClient();
+            $this->view->assign('connectionSucceeded', true);
+        } catch (MissingClientSecretException $e) {
+        } catch (AuthenticationFailedException $e) {
+            $this->view->assign('authenticationError', $e->getMessage());
         }
     }
 

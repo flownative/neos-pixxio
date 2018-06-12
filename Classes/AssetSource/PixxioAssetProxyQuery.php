@@ -243,22 +243,27 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
         switch ($this->assetTypeFilter) {
             case 'Image':
                 $formatTypes = ['image'];
+                $fileTypes = [];
             break;
             case 'Video':
                 $formatTypes = ['video'];
+                $fileTypes = [];
             break;
             case 'Audio':
                 $formatTypes = ['audio'];
+                $fileTypes = [];
             break;
             case 'Document':
-                $formatTypes = ['office'];
+                $formatTypes = [];
+                $fileTypes = ['pdf'];
             break;
             case 'All':
             default:
                 $formatTypes = [];
+                $fileTypes = [];
             break;
         }
 
-        return $this->assetSource->getPixxioClient()->search($searchTerm, $formatTypes, $this->offset, $limit, $orderings);
+        return $this->assetSource->getPixxioClient()->search($searchTerm, $formatTypes, $fileTypes, $this->offset, $limit, $orderings);
     }
 }

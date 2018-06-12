@@ -131,18 +131,20 @@ final class PixxioClient
     /**
      * @param string $queryExpression
      * @param array $formatTypes
+     * @param array $fileTypes
      * @param int $offset
      * @param int $limit
      * @param array $orderings
      * @return mixed|ResponseInterface
      */
-    public function search(string $queryExpression, array $formatTypes, int $offset = 0, int $limit = 50, $orderings = [])
+    public function search(string $queryExpression, array $formatTypes, array $fileTypes, int $offset = 0, int $limit = 50, $orderings = [])
     {
         $options = new \stdClass();
         $options->pagination = $limit . '-' . intval($offset / $limit + 1);
         $options->imageOptions = $this->imageOptions;
         $options->fields = $this->fields;
         $options->formatType = $formatTypes;
+        $options->fileType = implode(',', $fileTypes);
 
         if (!empty($queryExpression)) {
             $options->searchTerm = $queryExpression;

@@ -1,7 +1,7 @@
 {
   "description": "Neos integration for pixx.io",
   "type": "neos-package",
-  "name": "flownative/pixxio",
+  "name": "flownative/neos-pixxio",
   "license": "MIT",
   "require": {
     "neos/flow": "5.* || dev-master",

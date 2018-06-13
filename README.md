@@ -1,7 +1,7 @@
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 ![Packagist][packagist]
 
-[packagist]: https://img.shields.io/packagist/v/flownative/pixxio.svg
+[packagist]: https://img.shields.io/packagist/v/flownative/neos-pixxio.svg
 
 # pixx.io adaptor for Neos 4.x
 
@@ -21,12 +21,12 @@ pictures, graphics and video files easier. pixx.io is safe, efficient and easy t
 ## Installation
 
 The pixx.io connector is installed as a regular Flow package via Composer. For your existing
-project, simply include `flownative/pixxio` into the dependencies of your Flow or Neos distribution:
+project, simply include `flownative/neos-pixxio` into the dependencies of your Flow or Neos distribution:
 
 For Neos 4.*:
 
 ```bash
-$ composer require flownative/pixxio:~1.0
+$ composer require flownative/neos-pixxio:~1.0
 ```
 
 ## Enabling pixx.io API access

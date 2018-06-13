@@ -13,6 +13,7 @@ namespace Flownative\Pixxio\AssetSource;
  * source code.
  */
 
+use Behat\Transliterator\Transliterator;
 use Neos\Flow\Http\Uri;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\HasRemoteOriginalInterface;
@@ -98,14 +99,18 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
      */
     static public function fromJsonObject(\stdClass $jsonObject, PixxioAssetSource $assetSource)
     {
+        $usePixxioThumbnailAsOriginal = !in_array($jsonObject->fileType, ['JPG', 'PNG', 'SVG', 'PDF']);
+
+        $modifiedFileType = $usePixxioThumbnailAsOriginal ? 'jpg' : strtolower($jsonObject->fileType);
+
         $assetProxy = new static();
         $assetProxy->assetSource = $assetSource;
         $assetProxy->identifier = $jsonObject->id;
         $assetProxy->label = $jsonObject->subject;
-        $assetProxy->filename = $jsonObject->originalFilename;
+        $assetProxy->filename = Transliterator::urlize($jsonObject->subject) . '.' . $modifiedFileType;
         $assetProxy->lastModified = new \DateTime($jsonObject->modifyDate ?? '1.1.2000');
         $assetProxy->fileSize = $jsonObject->fileSize;
-        $assetProxy->mediaType = MediaTypes::getMediaTypeFromFilename('foo.' . $jsonObject->fileType);
+        $assetProxy->mediaType = MediaTypes::getMediaTypeFromFilename('foo.' . $modifiedFileType);
 
         $assetProxy->iptcProperties['Title'] = $jsonObject->subject ?? '';
         $assetProxy->iptcProperties['CaptionAbstract'] = $jsonObject->description ?? '';
@@ -122,6 +127,9 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
                 if (isset($modifiedImagePaths[1])) {
                     $assetProxy->previewUri = new Uri($modifiedImagePaths[1]);
                 }
+                if (isset($modifiedImagePaths[2])) {
+                    $assetProxy->originalUri = new Uri($modifiedImagePaths[2]);
+                }
             } else if (is_object($modifiedImagePaths)) {
                 if (isset($modifiedImagePaths->{'0'})) {
                     $assetProxy->thumbnailUri = new Uri($modifiedImagePaths->{'0'});
@@ -129,9 +137,12 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
                 if (isset($modifiedImagePaths->{'1'})) {
                     $assetProxy->previewUri = new Uri($modifiedImagePaths->{'1'});
                 }
+                if (isset($modifiedImagePaths->{'2'})) {
+                    $assetProxy->originalUri = new Uri($modifiedImagePaths->{'2'});
+                }
             }
         }
-        if (isset($jsonObject->originalPath)) {
+        if (!$usePixxioThumbnailAsOriginal && isset($jsonObject->originalPath)) {
             $assetProxy->originalUri = new Uri($jsonObject->originalPath);
         }
         return $assetProxy;

@@ -78,6 +78,10 @@ final class PixxioClient
                 'width' => 1500,
                 'height' => 1500,
                 'quality' => 90
+            ],
+            (object)[
+                'sizeMax' => 1920,
+                'quality' => 90
             ]
         ];
     }

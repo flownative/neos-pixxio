@@ -259,7 +259,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
             break;
             case 'All':
             default:
-                $formatTypes = [];
+                $formatTypes = ['converted'];
                 $fileTypes = [];
             break;
         }

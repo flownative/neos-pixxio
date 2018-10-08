@@ -19,8 +19,11 @@ use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\HasRemoteOriginalInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\SupportsIptcMetadataInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceInterface;
+use Neos\Media\Domain\Model\ImportedAsset;
+use Neos\Media\Domain\Repository\ImportedAssetRepository;
 use Neos\Utility\MediaTypes;
 use Psr\Http\Message\UriInterface;
+use Neos\Flow\Annotations as Flow;
 
 /**
  *
@@ -91,6 +94,12 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
      * @var int
      */
     private $heightInPixels;
+
+    /**
+     * @Flow\Inject
+     * @var ImportedAssetRepository
+     */
+    protected $importedAssetRepository;
 
     /**
      * @param \stdClass $jsonObject
@@ -275,7 +284,8 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
      */
     public function getLocalAssetIdentifier(): ?string
     {
-        return null;
+        $importedAsset = $this->importedAssetRepository->findOneByAssetSourceIdentifierAndRemoteAssetIdentifier($this->assetSource->getIdentifier(), $this->identifier);
+        return ($importedAsset instanceof ImportedAsset ? $importedAsset->getLocalAssetIdentifier() : null);
     }
 
     /**

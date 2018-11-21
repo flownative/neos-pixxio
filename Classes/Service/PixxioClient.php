@@ -14,7 +14,9 @@ namespace Flownative\Pixxio\Service;
  */
 
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
+use Flownative\Pixxio\Exception\ConnectionException;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Neos\Flow\Http\Uri;
 use Neos\Media\Domain\Model\AssetSource\SupportsSortingInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -92,16 +94,20 @@ final class PixxioClient
      */
     public function authenticate(string $refreshToken)
     {
-        $response = $this->guzzleClient->request(
-            'POST',
-            $this->apiEndpointUri . '/json/accessToken',
-            [
-                'form_params' => [
-                    'apiKey' => $this->apiKey,
-                    'refreshToken' => $refreshToken
+        try {
+            $response = $this->guzzleClient->request(
+                'POST',
+                $this->apiEndpointUri . '/json/accessToken',
+                [
+                    'form_params' => [
+                        'apiKey' => $this->apiKey,
+                        'refreshToken' => $refreshToken
+                    ]
                 ]
-            ]
-        );
+            );
+        } catch (GuzzleException $e) {
+            throw new AuthenticationFailedException('Authentication failed: ' . $e->getMessage(), 1542808119);
+        }
 
         $result = \GuzzleHttp\json_decode($response->getBody()->getContents());
         if ($result->success === 'true' && isset($result->accessToken)) {
@@ -114,7 +120,8 @@ final class PixxioClient
 
     /**
      * @param string $id
-     * @return mixed|ResponseInterface
+     * @return ResponseInterface
+     * @throws ConnectionException
      */
     public function getFile(string $id)
     {
@@ -129,7 +136,11 @@ final class PixxioClient
         );
 
         $client = new Client();
-        return $client->request('GET' ,$uri);
+        try {
+            return $client->request('GET', $uri);
+        } catch (GuzzleException $e) {
+            throw new ConnectionException('Retrieving file failed: ' . $e->getMessage(), 1542808207);
+        }
     }
 
     /**
@@ -139,7 +150,8 @@ final class PixxioClient
      * @param int $offset
      * @param int $limit
      * @param array $orderings
-     * @return mixed|ResponseInterface
+     * @return ResponseInterface
+     * @throws ConnectionException
      */
     public function search(string $queryExpression, array $formatTypes, array $fileTypes, int $offset = 0, int $limit = 50, $orderings = [])
     {
@@ -171,7 +183,11 @@ final class PixxioClient
         );
 
         $client = new Client();
-        return $client->request('GET' ,$uri);
+        try {
+            return $client->request('GET', $uri);
+        } catch (GuzzleException $e) {
+            throw new ConnectionException('Search failed: ' . $e->getMessage(), 1542808181);
+        }
     }
 
     /**

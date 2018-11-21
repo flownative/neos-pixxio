@@ -23,6 +23,12 @@ Neos:
           # this Neos installation.
           # sharedRefreshToken: ''
 
+          # Additional configuration for specific media types
+          mediaTypes:
+            'image/svg+xml':
+              usePixxioThumbnailAsOriginal: true
+            'application/pdf':
+              usePixxioThumbnailAsOriginal: true
   Neos:
     modules:
       management:

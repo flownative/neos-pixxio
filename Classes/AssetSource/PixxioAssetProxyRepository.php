@@ -15,6 +15,7 @@ namespace Flownative\Pixxio\AssetSource;
 
 use Flownative\Pixxio\Exception\AssetNotFoundException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
+use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use Neos\Cache\Frontend\VariableFrontend;
 use Neos\Media\Domain\Model\AssetSource\AssetNotFoundExceptionInterface;
@@ -67,6 +68,8 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
      * @throws MissingClientSecretException
      * @throws AuthenticationFailedException
      * @throws AssetNotFoundException
+     * @throws ConnectionException
+     * @throws \Neos\Cache\Exception
      */
     public function getAssetProxy(string $identifier): AssetProxyInterface
     {

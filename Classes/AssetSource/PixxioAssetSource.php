@@ -24,6 +24,7 @@ use Neos\Flow\Http\Uri;
 use Neos\Flow\Security\Context;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyRepositoryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceInterface;
+use Neos\Utility\MediaTypes;
 
 /**
  *
@@ -79,6 +80,11 @@ class PixxioAssetSource implements AssetSourceInterface
     private $pixxioClient;
 
     /**
+     * @var array
+     */
+    private $assetSourceOptions;
+
+    /**
      * @param string $assetSourceIdentifier
      * @param array $assetSourceOptions
      */
@@ -87,7 +93,10 @@ class PixxioAssetSource implements AssetSourceInterface
         if (preg_match('/^[a-z][a-z0-9-]{0,62}[a-z]$/', $assetSourceIdentifier) !== 1) {
             throw new \InvalidArgumentException(sprintf('Invalid asset source identifier "%s". The identifier must match /^[a-z][a-z0-9-]{0,62}[a-z]$/', $assetSourceIdentifier), 1525790890);
         }
+
         $this->assetSourceIdentifier = $assetSourceIdentifier;
+        $this->assetSourceOptions = $assetSourceOptions;
+
         foreach ($assetSourceOptions as $optionName => $optionValue) {
             switch ($optionName) {
                 case 'apiEndpointUri':
@@ -105,6 +114,16 @@ class PixxioAssetSource implements AssetSourceInterface
                         throw new \InvalidArgumentException(sprintf('Invalid shared refresh token specified for Pixx.io asset source %s', $assetSourceIdentifier), 1528806843);
                     }
                     $this->sharedRefreshToken = $optionValue;
+                break;
+                case 'mediaTypes':
+                    if (!is_array($optionValue)) {
+                        throw new \InvalidArgumentException(sprintf('Invalid media types specified for Pixx.io asset source %s', $assetSourceIdentifier), 1542809628);
+                    }
+                    foreach ($optionValue as $mediaType => $mediaTypeOptions) {
+                        if (MediaTypes::getFilenameExtensionsFromMediaType($mediaType) === []) {
+                            throw new \InvalidArgumentException(sprintf('Unknown media type "%s" specified for Pixx.io asset source %s', $mediaType, $assetSourceIdentifier), 1542809775);
+                        }
+                    }
                 break;
                 default:
                     throw new \InvalidArgumentException(sprintf('Unknown asset source option "%s" specified for Pixx.io asset source "%s". Please check your settings.', $optionName, $assetSourceIdentifier), 1525790910);
@@ -156,6 +175,14 @@ class PixxioAssetSource implements AssetSourceInterface
     public function isReadOnly(): bool
     {
         return true;
+    }
+
+    /**
+     * @return array
+     */
+    public function getAssetSourceOptions(): array
+    {
+        return $this->assetSourceOptions;
     }
 
     /**

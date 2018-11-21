@@ -73,6 +73,30 @@ into the form found in the backend module and store it along with your Neos user
 When everything works out fine, Neos will report that the connection was successful (and if not, you'll see an error
 message with further details).
 
+## Additional configuration options
+
+During import, Neos tries to use a medium-sized version of the original instead of the high resolution file uploaded to
+pixx.io. This greatly improves import speed and produces good results in most cases. Furthermore, this way some formats,
+like Adobe Photoshop, can be used seamlessly in Neos without the need to prior converting them into a web-compatible image
+format.
+
+It is possible though, to configure this plugin to always use the high-res original for import. By default, formats like SVG or PDF
+are imported this way. You can add more types through the similar entries like in the following settings:
+
+```yaml
+Neos:
+  Media:
+    assetSources:
+      'flownative-pixxio':
+        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
+        assetSourceOptions:
+          mediaTypes:
+            'image/svg+xml':
+              usePixxioThumbnailAsOriginal: true
+            'application/pdf':
+              usePixxioThumbnailAsOriginal: true
+```
+
 ## Cleaning up unused assets
 
 Whenever a pixx.io asset is used in Neos, the media file will be copied automatically to the internal Neos asset

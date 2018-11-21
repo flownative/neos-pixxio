@@ -108,8 +108,9 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
      */
     static public function fromJsonObject(\stdClass $jsonObject, PixxioAssetSource $assetSource)
     {
-        $usePixxioThumbnailAsOriginal = !in_array($jsonObject->fileType, ['JPG', 'PNG', 'SVG', 'PDF']);
-
+        $assetSourceOptions = $assetSource->getAssetSourceOptions();
+        $pixxioOriginalMediaType = MediaTypes::getMediaTypeFromFilename('foo.' . strtolower($jsonObject->fileType));;
+        $usePixxioThumbnailAsOriginal = (!isset($assetSourceOptions['mediaTypes'][$pixxioOriginalMediaType]) || $assetSourceOptions['mediaTypes'][$pixxioOriginalMediaType]['usePixxioThumbnailAsOriginal'] === false);
         $modifiedFileType = $usePixxioThumbnailAsOriginal ? 'jpg' : strtolower($jsonObject->fileType);
 
         $assetProxy = new static();
@@ -121,7 +122,8 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
         $assetProxy->fileSize = $jsonObject->fileSize;
         $assetProxy->mediaType = MediaTypes::getMediaTypeFromFilename('foo.' . $modifiedFileType);
 
-        $assetProxy->iptcProperties['Title'] = $jsonObject->subject ?? '';
+#        $assetProxy->iptcProperties['Title'] = $jsonObject->subject ?? '';
+        $assetProxy->iptcProperties['Title'] = $usePixxioThumbnailAsOriginal  ? 'YES' : 'NO';
         $assetProxy->iptcProperties['CaptionAbstract'] = $jsonObject->description ?? '';
 
         $assetProxy->widthInPixels = $jsonObject->imageWidth ?? null;

@@ -93,6 +93,10 @@ command non-interactive:
 ./flow media:removeunused --quiet --assume-yes --asset-source flownative-pixxio
 ``` 
 
+## Background and Demo
+
+[![Background and Demo](https://img.youtube.com/vi/nG05nn-Yd0I/0.jpg)](https://www.youtube.com/watch?v=nG05nn-Yd0I)
+
 ## Credits and license
 
 This plugin was sponsored by [pixx.io](https://www.pixxio-bildverwaltung.de/) and its initial version was developed by

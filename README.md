@@ -97,6 +97,11 @@ Neos:
               usePixxioThumbnailAsOriginal: true
 ```
 
+## Run database migrations
+```bash
+./flow doctrine:migrate
+``` 
+
 ## Cleaning up unused assets
 
 Whenever a pixx.io asset is used in Neos, the media file will be copied automatically to the internal Neos asset

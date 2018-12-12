@@ -163,7 +163,7 @@ final class PixxioClient
         $options->fileType = implode(',', $fileTypes);
 
         if (!empty($queryExpression)) {
-            $options->searchTerm = $queryExpression;
+            $options->searchTerm = urlencode($queryExpression);
         }
 
         if (isset($orderings['filename'])) {

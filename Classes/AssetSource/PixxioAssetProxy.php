@@ -122,8 +122,7 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
         $assetProxy->fileSize = $jsonObject->fileSize;
         $assetProxy->mediaType = MediaTypes::getMediaTypeFromFilename('foo.' . $modifiedFileType);
 
-#        $assetProxy->iptcProperties['Title'] = $jsonObject->subject ?? '';
-        $assetProxy->iptcProperties['Title'] = $usePixxioThumbnailAsOriginal  ? 'YES' : 'NO';
+        $assetProxy->iptcProperties['Title'] = $jsonObject->subject ?? '';
         $assetProxy->iptcProperties['CaptionAbstract'] = $jsonObject->description ?? '';
 
         $assetProxy->widthInPixels = $jsonObject->imageWidth ?? null;

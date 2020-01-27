@@ -124,6 +124,7 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
 
         $assetProxy->iptcProperties['Title'] = $jsonObject->subject ?? '';
         $assetProxy->iptcProperties['CaptionAbstract'] = $jsonObject->description ?? '';
+        $assetProxy->iptcProperties['CopyrightNotice'] = $jsonObject->dynamicMetadata->CopyrightNotice ?? '';
 
         $assetProxy->widthInPixels = $jsonObject->imageWidth ?? null;
         $assetProxy->heightInPixels = $jsonObject->imageHeight ?? null;

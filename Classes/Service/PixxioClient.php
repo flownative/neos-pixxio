@@ -57,7 +57,7 @@ final class PixxioClient
      */
     private $fields = [
         'id', 'originalFilename', 'fileType', 'keywords', 'createDate', 'imageHeight', 'imageWidth', 'originalPath', 'subject', 'description',
-        'modifyDate', 'fileSize', 'modifiedImagePaths', 'imagePath'
+        'modifyDate', 'fileSize', 'modifiedImagePaths', 'imagePath', 'dynamicMetadata'
     ];
 
 

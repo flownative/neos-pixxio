@@ -5,7 +5,7 @@
   "license": "MIT",
   "require": {
     "neos/flow": "6.* || dev-master",
-    "neos/media": "5.* || dev-master",
+    "neos/media": "5.* || 6.* || dev-master",
     "guzzlehttp/guzzle": "6.*",
     "behat/transliterator": "~1.0"
   },

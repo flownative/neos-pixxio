@@ -21,14 +21,12 @@ use Flownative\Pixxio\Service\PixxioClient;
 use Flownative\Pixxio\Service\PixxioServiceFactory;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Http\Uri;
+use Neos\Flow\Security\Account;
 use Neos\Flow\Security\Context;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyRepositoryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceInterface;
 use Neos\Utility\MediaTypes;
 
-/**
- *
- */
 class PixxioAssetSource implements AssetSourceInterface
 {
     /**
@@ -80,6 +78,16 @@ class PixxioAssetSource implements AssetSourceInterface
     private $pixxioClient;
 
     /**
+     * @var bool
+     */
+    private $autoTaggingEnable = false;
+
+    /**
+     * @var string
+     */
+    private $autoTaggingInUseTag = 'used-by-neos';
+
+    /**
      * @var array
      */
     private $assetSourceOptions;
@@ -122,6 +130,23 @@ class PixxioAssetSource implements AssetSourceInterface
                     foreach ($optionValue as $mediaType => $mediaTypeOptions) {
                         if (MediaTypes::getFilenameExtensionsFromMediaType($mediaType) === []) {
                             throw new \InvalidArgumentException(sprintf('Unknown media type "%s" specified for Pixx.io asset source %s', $mediaType, $assetSourceIdentifier), 1542809775);
+                        }
+                    }
+                break;
+                case 'autoTagging':
+                    if (!is_array($optionValue)) {
+                        throw new \InvalidArgumentException(sprintf('Invalid auto tagging configuration specified for Pixx.io asset source %s', $assetSourceIdentifier), 1587561121);
+                    }
+                    foreach ($optionValue as $autoTaggingOptionName => $autoTaggingOptionValue) {
+                        switch ($autoTaggingOptionName) {
+                            case 'enable':
+                                $this->autoTaggingEnable = (bool)$autoTaggingOptionValue;
+                            break;
+                            case 'inUseTag':
+                                $this->autoTaggingInUseTag = preg_replace('/[^A-Za-z0-9&_+ßäöüÄÖÜ.@ -]+/u', '', (string)$autoTaggingOptionValue);
+                            break;
+                            default:
+                                throw new \InvalidArgumentException(sprintf('Unknown asset source option "%s" specified for autoTagging in Pixx.io asset source "%s". Please check your settings.', $autoTaggingOptionName, $assetSourceIdentifier), 1587561244);
                         }
                     }
                 break;
@@ -186,6 +211,22 @@ class PixxioAssetSource implements AssetSourceInterface
     }
 
     /**
+     * @return bool
+     */
+    public function isAutoTaggingEnabled(): bool
+    {
+        return $this->autoTaggingEnable;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAutoTaggingInUseTag(): string
+    {
+        return $this->autoTaggingInUseTag;
+    }
+
+    /**
      * @return PixxioClient
      * @throws MissingClientSecretException
      * @throws AuthenticationFailedException
@@ -193,10 +234,17 @@ class PixxioAssetSource implements AssetSourceInterface
     public function getPixxioClient(): PixxioClient
     {
         if ($this->pixxioClient === null) {
-            $account = $this->securityContext->getAccount();
-            $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
 
-            if (($clientSecret === null || $clientSecret->getRefreshToken() === '') && !empty($this->sharedRefreshToken)) {
+            if ($this->securityContext->isInitialized()) {
+                $account = $this->securityContext->getAccount();
+                $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
+            } else {
+                $clientSecret = null;
+                $account = new Account();
+                $account->setAccountIdentifier('shared');
+            }
+
+            if (!empty($this->sharedRefreshToken) && ($clientSecret === null || $clientSecret->getRefreshToken() === '')) {
                 $clientSecret = new ClientSecret();
                 $clientSecret->setRefreshToken($this->sharedRefreshToken);
                 $clientSecret->setFlowAccountIdentifier('shared');

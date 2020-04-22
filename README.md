@@ -2,7 +2,7 @@
 [![Packagist](https://img.shields.io/packagist/v/flownative/neos-pixxio.svg)](https://packagist.org/packages/flownative/neos-pixxio)
 [![Maintenance level: Acquaintance](https://img.shields.io/badge/maintenance-%E2%99%A1-ff69b4.svg)](https://www.flownative.com/en/products/open-source.html)
 
-# pixx.io adaptor for Neos 4.x
+# pixx.io adaptor for Neos 4.x / 5.x
 
 This [Flow](https://flow.neos.io) package allows you to use assets (ie. pictures and other documents) stored in [pixx.io](https://www.pixxio-bildverwaltung.de/)
 in your Neos website as if these assets were native Neos assets.
@@ -26,6 +26,12 @@ For Neos 4.*:
 
 ```bash
 $ composer require flownative/neos-pixxio:~1.0
+```
+
+For Neos 5.*:
+
+```bash
+$ composer require flownative/neos-pixxio:~2.0
 ```
 
 ## Enabling pixx.io API access
@@ -95,6 +101,25 @@ Neos:
               usePixxioThumbnailAsOriginal: true
             'application/pdf':
               usePixxioThumbnailAsOriginal: true
+```
+
+This plugin also offers an auto-tagging feature. When auto-tagging is enabled, Neos will automatically flag assets
+which are currently used with a user-defined keyword. As soon as the asset is not used in Neos anymore, this keyword
+is removed. This keyword is applied to the actual file / asset in the Pixxio media library and helps editors to keep
+an overview of which assets are currently used by Neos.
+
+Auto-tagging is configured as follows:
+
+```yaml
+Neos:
+  Media:
+    assetSources:
+      'flownative-pixxio':
+        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
+        assetSourceOptions:
+          autoTagging:
+            enable: true
+            inUseTag: 'your-custom-tag'
 ```
 
 ## Run database migrations

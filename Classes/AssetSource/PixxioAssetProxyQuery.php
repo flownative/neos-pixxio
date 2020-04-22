@@ -18,7 +18,7 @@ use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use GuzzleHttp\Psr7\Response;
 use Neos\Flow\Annotations\Inject;
-use Psr\Log\LoggerInterface as SystemLoggerInterface;
+use Neos\Flow\Log\SystemLoggerInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
 

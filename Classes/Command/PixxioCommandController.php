@@ -2,6 +2,7 @@
 namespace Flownative\Pixxio\Command;
 
 use Flownative\Pixxio\AssetSource\PixxioAssetProxy;
+use Flownative\Pixxio\AssetSource\PixxioAssetProxyRepository;
 use Flownative\Pixxio\AssetSource\PixxioAssetSource;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\Exception;
@@ -57,6 +58,10 @@ class PixxioCommandController extends CommandController
             exit(1);
         }
 
+        $assetProxyRepository = $pixxioAssetSource->getAssetProxyRepository();
+        assert($assetProxyRepository instanceof PixxioAssetProxyRepository);
+        $assetProxyRepository->getAssetProxyCache()->flush();
+
         foreach ($this->assetRepository->iterate($iterator) as $asset) {
             if (!$asset instanceof Asset) {
                 continue;
@@ -69,19 +74,35 @@ class PixxioCommandController extends CommandController
             }
 
             $assetProxy = $asset->getAssetProxy();
-            assert($assetProxy instanceof PixxioAssetProxy);
+            if (!$assetProxy instanceof PixxioAssetProxy) {
+                $this->outputLine('   error   No asset proxy found for %s', [$asset->getLabel()]);
+                continue;
+            }
 
+            $currentTags = $assetProxy->getTags();
+            sort($currentTags);
             if ($asset->getUsageCount() > 0) {
-                $tags = array_unique(array_merge($assetProxy->getTags(), [$pixxioAssetSource->getAutoTaggingInUseTag()]));
-                $pixxioClient->updateFile($assetProxy->getIdentifier(), ['keywords' => implode(',', $tags)]);
-                $this->outputLine('   ✅  %s %s (%s)', [$asset->getLabel(), $assetProxy->getIdentifier(), $asset->getUsageCount()]);
-            } else {
-                $tags = array_flip($assetProxy->getTags());
-                unset($tags[$pixxioAssetSource->getAutoTaggingInUseTag()]);
-                $tags = array_flip($tags);
+                $newTags = array_unique(array_merge($currentTags, [$pixxioAssetSource->getAutoTaggingInUseTag()]));
+                sort($newTags);
 
-                $pixxioClient->updateFile($assetProxy->getIdentifier(), ['keywords' => implode(',', $tags)]);
-                $this->outputLine('   🗑  %s', [$asset->getLabel(), $asset->getUsageCount()]);
+                if ($currentTags !== $newTags) {
+                    $pixxioClient->updateFile($assetProxy->getIdentifier(), ['keywords' => implode(',', $newTags)]);
+                    $this->outputLine('   tagged   %s %s (%s)', [$asset->getLabel(), $assetProxy->getIdentifier(), $asset->getUsageCount()]);
+                } else {
+                    $this->outputLine('  (tagged)  %s %s (%s)', [$asset->getLabel(), $assetProxy->getIdentifier(), $asset->getUsageCount()]);
+                }
+            } else {
+                $newTags = array_flip($currentTags);
+                unset($newTags[$pixxioAssetSource->getAutoTaggingInUseTag()]);
+                $newTags = array_flip($newTags);
+                sort($newTags);
+
+                if ($currentTags !== $newTags) {
+                    $pixxioClient->updateFile($assetProxy->getIdentifier(), ['keywords' => implode(',', $newTags)]);
+                    $this->outputLine('   removed %s', [$asset->getLabel(), $asset->getUsageCount()]);
+                } else {
+                    $this->outputLine('  (removed) %s', [$asset->getLabel(), $asset->getUsageCount()]);
+                }
             }
         }
     }

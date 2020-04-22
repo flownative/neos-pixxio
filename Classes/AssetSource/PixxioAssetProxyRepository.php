@@ -13,11 +13,14 @@ namespace Flownative\Pixxio\AssetSource;
  * source code.
  */
 
+use Exception;
 use Flownative\Pixxio\Exception\AssetNotFoundException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
+use Neos\Cache\Frontend\StringFrontend;
 use Neos\Cache\Frontend\VariableFrontend;
+use Neos\Flow\ObjectManagement\DependencyInjection\DependencyProxy;
 use Neos\Media\Domain\Model\AssetSource\AssetNotFoundExceptionInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
@@ -56,7 +59,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
     private $orderings = [];
 
     /**
-     * @var VariableFrontend
+     * @var StringFrontend
      */
     protected $assetProxyCache;
 
@@ -70,6 +73,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
      * @throws AssetNotFoundException
      * @throws ConnectionException
      * @throws \Neos\Cache\Exception
+     * @throws Exception
      */
     public function getAssetProxy(string $identifier): AssetProxyInterface
     {
@@ -157,7 +161,6 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         return $query->count();
     }
 
-
     /**
      * Sets the property names to order results by. Expected like this:
      * array(
@@ -172,5 +175,16 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
     public function orderBy(array $orderings): void
     {
         $this->orderings = $orderings;
+    }
+
+    /**
+     * @return StringFrontend
+     */
+    public function getAssetProxyCache(): StringFrontend
+    {
+        if ($this->assetProxyCache instanceof DependencyProxy) {
+            $this->assetProxyCache->_activateDependency();
+        }
+        return $this->assetProxyCache;
     }
 }

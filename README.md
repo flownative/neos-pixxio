@@ -103,25 +103,6 @@ Neos:
               usePixxioThumbnailAsOriginal: true
 ```
 
-This plugin also offers an auto-tagging feature. When auto-tagging is enabled, Neos will automatically flag assets
-which are currently used with a user-defined keyword. As soon as the asset is not used in Neos anymore, this keyword
-is removed. This keyword is applied to the actual file / asset in the Pixxio media library and helps editors to keep
-an overview of which assets are currently used by Neos.
-
-Auto-tagging is configured as follows:
-
-```yaml
-Neos:
-  Media:
-    assetSources:
-      'flownative-pixxio':
-        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
-        assetSourceOptions:
-          autoTagging:
-            enable: true
-            inUseTag: 'your-custom-tag'
-```
-
 ## Run database migrations
 ```bash
 ./flow doctrine:migrate
@@ -146,6 +127,50 @@ command non-interactive:
 ```bash
 ./flow media:removeunused --quiet --assume-yes --asset-source flownative-pixxio
 ``` 
+
+## Auto-Tagging
+
+This plugin also offers an auto-tagging feature. When auto-tagging is enabled, Neos will automatically flag assets
+which are currently used with a user-defined keyword. When as the asset is not used in Neos anymore, this keyword
+is removed. This keyword is applied to the actual file / asset in the Pixxio media library and helps editors to keep
+an overview of which assets are currently used by Neos.
+
+Auto-tagging is configured as follows:
+
+```yaml
+Neos:
+  Media:
+    assetSources:
+      'flownative-pixxio':
+        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
+        assetSourceOptions:
+          autoTagging:
+            enable: true
+            inUseTag: 'your-custom-tag'
+```
+
+Since Neos currently cannot handle auto-tagging reliably during runtime, the job must be done through a
+command line command. Make sure to clean up unused assets (see above) before running the auto-tag command.
+
+Simply run the following command for tagging new assets and removing tags from assets which are not in use
+anymore: 
+
+```
+./flow pixxio:tagusedassets
+
+Tagging used assets of asset source "flownative-pixxio" via Pixxio API:
+  (tagged)  dana-devolk-1348553-unsplash 358 (1)
+   tagged   azamat-zhanisov-1348039-unsplash 354 (1)
+  (tagged)  tim-foster-1345174-unsplash 373 (1)
+   removed  some-coffee 28 (0)
+  (tagged)  nikhita-s-615116-unsplash 368 (1)
+```
+
+As already mentioned, it is recommended to run this command through a cron-job, ideally in combination with
+the `media:removeunused` command.
+
+Note: At this point, the auto-tagging feature is not really optimized for performance. The command merely
+iterates over all assets which were imported from Pixxio and checks if tags need to be updated.
 
 ## Background and Demo
 

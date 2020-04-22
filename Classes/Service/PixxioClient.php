@@ -17,7 +17,7 @@ use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Psr7\Uri;
+use Neos\Flow\Http\Uri;
 use Neos\Media\Domain\Model\AssetSource\SupportsSortingInterface;
 use Psr\Http\Message\ResponseInterface;
 

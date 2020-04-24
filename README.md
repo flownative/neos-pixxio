@@ -166,8 +166,9 @@ Tagging used assets of asset source "flownative-pixxio" via Pixxio API:
   (tagged)  nikhita-s-615116-unsplash 368 (1)
 ```
 
-As already mentioned, it is recommended to run this command through a cron-job, ideally in combination with
-the `media:removeunused` command.
+It is recommended to run this command through a cron-job, ideally in combination with the `media:removeunused`
+command. It's important to run the `removeunused`-command *after* the tagging command, because otherwise removed
+images will not be untagged in the Pixxio media library.
 
 Note: At this point, the auto-tagging feature is not really optimized for performance. The command merely
 iterates over all assets which were imported from Pixxio and checks if tags need to be updated.

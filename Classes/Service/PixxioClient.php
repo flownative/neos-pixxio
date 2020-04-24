@@ -193,7 +193,7 @@ final class PixxioClient
     public function search(string $queryExpression, array $formatTypes, array $fileTypes, int $offset = 0, int $limit = 50, $orderings = []): ResponseInterface
     {
         $options = new \stdClass();
-        $options->pagination = $limit . '-' . intval($offset / $limit + 1);
+        $options->pagination = $limit . '-' . (int)($offset / $limit + 1);
         $options->imageOptions = $this->imageOptions;
         $options->fields = $this->fields;
         $options->formatType = $formatTypes;

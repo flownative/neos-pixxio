@@ -29,6 +29,13 @@ Neos:
               usePixxioThumbnailAsOriginal: true
             'application/pdf':
               usePixxioThumbnailAsOriginal: true
+
+          # This plugin can automatically tag files in the pixxio media library
+          # when they are in use, and remove the tag once they are not used anymore
+          autoTagging:
+            enable: false
+            inUseTag: 'used-by-neos'
+
   Neos:
     modules:
       management:

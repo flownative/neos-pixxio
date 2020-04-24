@@ -15,6 +15,7 @@ namespace Flownative\Pixxio\AssetSource;
 
 use Behat\Transliterator\Transliterator;
 use GuzzleHttp\Psr7\Uri;
+use Exception;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\HasRemoteOriginalInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\SupportsIptcMetadataInterface;
@@ -24,6 +25,7 @@ use Neos\Media\Domain\Repository\ImportedAssetRepository;
 use Neos\Utility\MediaTypes;
 use Psr\Http\Message\UriInterface;
 use Neos\Flow\Annotations as Flow;
+use stdClass;
 
 /**
  *
@@ -96,17 +98,23 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
     private $heightInPixels;
 
     /**
+     * @var array
+     */
+    private $tags = [];
+
+    /**
      * @Flow\Inject
      * @var ImportedAssetRepository
      */
     protected $importedAssetRepository;
 
     /**
-     * @param \stdClass $jsonObject
+     * @param stdClass $jsonObject
      * @param PixxioAssetSource $assetSource
      * @return static
+     * @throws Exception
      */
-    static public function fromJsonObject(\stdClass $jsonObject, PixxioAssetSource $assetSource)
+    public static function fromJsonObject(stdClass $jsonObject, PixxioAssetSource $assetSource): PixxioAssetProxy
     {
         $assetSourceOptions = $assetSource->getAssetSourceOptions();
         $pixxioOriginalMediaType = MediaTypes::getMediaTypeFromFilename('foo.' . strtolower($jsonObject->fileType));;
@@ -121,6 +129,7 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
         $assetProxy->lastModified = new \DateTime($jsonObject->modifyDate ?? '1.1.2000');
         $assetProxy->fileSize = $jsonObject->fileSize;
         $assetProxy->mediaType = MediaTypes::getMediaTypeFromFilename('foo.' . $modifiedFileType);
+        $assetProxy->tags = isset($jsonObject->keywords) ? explode(',', $jsonObject->keywords) : [];
 
         $assetProxy->iptcProperties['Title'] = $jsonObject->subject ?? '';
         $assetProxy->iptcProperties['CaptionAbstract'] = $jsonObject->description ?? '';
@@ -288,6 +297,14 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
     {
         $importedAsset = $this->importedAssetRepository->findOneByAssetSourceIdentifierAndRemoteAssetIdentifier($this->assetSource->getIdentifier(), $this->identifier);
         return ($importedAsset instanceof ImportedAsset ? $importedAsset->getLocalAssetIdentifier() : null);
+    }
+
+    /**
+     * @return array
+     */
+    public function getTags(): array
+    {
+        return $this->tags;
     }
 
     /**

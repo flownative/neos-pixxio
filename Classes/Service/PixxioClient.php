@@ -15,6 +15,7 @@ namespace Flownative\Pixxio\Service;
 
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
+use Flownative\Pixxio\Exception\Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Uri;
@@ -92,7 +93,7 @@ final class PixxioClient
      * @param string $refreshToken
      * @throws AuthenticationFailedException
      */
-    public function authenticate(string $refreshToken)
+    public function authenticate(string $refreshToken): void
     {
         try {
             $response = $this->guzzleClient->request(
@@ -115,7 +116,7 @@ final class PixxioClient
             return;
         }
 
-        throw new AuthenticationFailedException('Authentication failed: ' . isset($result->help) ? $result->help : 'Unknown cause', 1526545835);
+        throw new AuthenticationFailedException('Authentication failed: ' . ($result->help ?? 'Unknown cause'), 1526545835);
     }
 
     /**
@@ -123,7 +124,7 @@ final class PixxioClient
      * @return ResponseInterface
      * @throws ConnectionException
      */
-    public function getFile(string $id)
+    public function getFile(string $id): ResponseInterface
     {
         $options = new \stdClass();
         $options->imageOptions = $this->imageOptions;
@@ -144,6 +145,42 @@ final class PixxioClient
     }
 
     /**
+     * @param string $id
+     * @param array $metadata
+     * @return ResponseInterface
+     * @throws Exception
+     */
+    public function updateFile(string $id, array $metadata): ResponseInterface
+    {
+        if (!isset($metadata['keywords'])) {
+            throw new Exception('updateFile: Only support for keywords is implemented yet', 1587559102);
+        }
+
+        $options = new \stdClass();
+        $options->keywords = $metadata['keywords'];
+
+        $uri = new Uri( $this->apiEndpointUri . '/json/files/' . $id);
+        $uri = $uri->withQuery(
+            'accessToken=' . $this->accessToken
+        );
+
+        $client = new Client();
+        try {
+            return $client->request(
+                'PUT',
+                $uri,
+                [
+                    'form_params' => [
+                        'options' => \GuzzleHttp\json_encode($options)
+                    ]
+                ]
+            );
+        } catch (GuzzleException $e) {
+            throw new ConnectionException('Updating file failed: ' . $e->getMessage(), 1587559150);
+        }
+    }
+
+    /**
      * @param string $queryExpression
      * @param array $formatTypes
      * @param array $fileTypes
@@ -153,10 +190,10 @@ final class PixxioClient
      * @return ResponseInterface
      * @throws ConnectionException
      */
-    public function search(string $queryExpression, array $formatTypes, array $fileTypes, int $offset = 0, int $limit = 50, $orderings = [])
+    public function search(string $queryExpression, array $formatTypes, array $fileTypes, int $offset = 0, int $limit = 50, $orderings = []): ResponseInterface
     {
         $options = new \stdClass();
-        $options->pagination = $limit . '-' . intval($offset / $limit + 1);
+        $options->pagination = $limit . '-' . (int)($offset / $limit + 1);
         $options->imageOptions = $this->imageOptions;
         $options->fields = $this->fields;
         $options->formatType = $formatTypes;

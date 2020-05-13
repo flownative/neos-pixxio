@@ -88,8 +88,11 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
             $response = $client->getFile($identifier);
             $responseObject = \GuzzleHttp\json_decode($response->getBody());
 
-            if (!$responseObject instanceof \stdClass || $responseObject->id !== $identifier) {
+            if (!$responseObject instanceof \stdClass) {
                 throw new AssetNotFoundException('Asset not found', 1526636260);
+            }
+            if (!isset($responseObject->id) || $responseObject->id !== $identifier) {
+                throw new AssetNotFoundException('Asset not found or unexpected API response', 1589354288);
             }
             $this->assetProxyCache->set($cacheEntryIdentifier, \GuzzleHttp\json_encode($responseObject, JSON_FORCE_OBJECT));
         }

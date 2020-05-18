@@ -4,6 +4,7 @@ namespace Flownative\Pixxio\Command;
 use Flownative\Pixxio\AssetSource\PixxioAssetProxy;
 use Flownative\Pixxio\AssetSource\PixxioAssetProxyRepository;
 use Flownative\Pixxio\AssetSource\PixxioAssetSource;
+use Flownative\Pixxio\Exception\AccessToAssetDeniedException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\Exception;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
@@ -33,7 +34,6 @@ class PixxioCommandController extends CommandController
      * @param string $assetSource Name of the pixxio asset source
      * @param bool $quiet If set, only errors will be displayed.
      * @return void
-     * @throws Exception
      */
     public function tagUsedAssetsCommand(string $assetSource = 'flownative-pixxio', bool $quiet = false): void
     {
@@ -73,9 +73,15 @@ class PixxioCommandController extends CommandController
                 continue;
             }
 
-            $assetProxy = $asset->getAssetProxy();
+            try {
+                $assetProxy = $asset->getAssetProxy();
+            } catch (AccessToAssetDeniedException $exception) {
+                $this->outputLine('   error   %s', [$exception->getMessage()]);
+                continue;
+            }
+
             if (!$assetProxy instanceof PixxioAssetProxy) {
-                $this->outputLine('   error   No asset proxy found for %s', [$asset->getLabel()]);
+                $this->outputLine('   error   Asset "%s" (%s) could not be accessed via Pixxio-API', [$asset->getLabel(), $asset->getIdentifier()]);
                 continue;
             }
 

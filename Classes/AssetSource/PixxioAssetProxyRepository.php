@@ -14,6 +14,7 @@ namespace Flownative\Pixxio\AssetSource;
  */
 
 use Exception;
+use Flownative\Pixxio\Exception\AccessToAssetDeniedException;
 use Flownative\Pixxio\Exception\AssetNotFoundException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
@@ -91,9 +92,16 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
             if (!$responseObject instanceof \stdClass) {
                 throw new AssetNotFoundException('Asset not found', 1526636260);
             }
-            if (!isset($responseObject->id) || $responseObject->id !== $identifier) {
-                throw new AssetNotFoundException('Asset not found or unexpected API response', 1589354288);
+            if (!isset($responseObject->success) || $responseObject->success !== 'true') {
+                switch ($responseObject->status) {
+                    case 403:
+                        throw new AccessToAssetDeniedException(sprintf('Failed retrieving asset: %s', $response->help ?? '-') , 1589815740);
+                    break;
+                    default:
+                        throw new AssetNotFoundException(sprintf('Failed retrieving asset, unexpected API response: %s', $response->help ?? '-') , 1589354288);
+                }
             }
+
             $this->assetProxyCache->set($cacheEntryIdentifier, \GuzzleHttp\json_encode($responseObject, JSON_FORCE_OBJECT));
         }
         return PixxioAssetProxy::fromJsonObject($responseObject, $this->assetSource);

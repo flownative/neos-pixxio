@@ -15,6 +15,7 @@ namespace Flownative\Pixxio\Exception;
 
 use Neos\Media\Domain\Model\AssetSource\AssetNotFoundExceptionInterface;
 
-class AssetNotFoundException extends Exception implements AssetNotFoundExceptionInterface
+class AccessToAssetDeniedException extends Exception implements AssetNotFoundExceptionInterface
 {
+    protected $statusCode = 403;
 }

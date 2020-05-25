@@ -150,10 +150,8 @@ Neos:
 ```
 
 Since Neos currently cannot handle auto-tagging reliably during runtime, the job must be done through a
-command line command. Make sure to clean up unused assets (see above) before running the auto-tag command.
-
-Simply run the following command for tagging new assets and removing tags from assets which are not in use
-anymore: 
+command line command. Simply run the following command for tagging new assets and removing tags from 
+assets which are not in use anymore: 
 
 ```
 ./flow pixxio:tagusedassets

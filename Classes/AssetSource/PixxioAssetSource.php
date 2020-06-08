@@ -68,6 +68,11 @@ class PixxioAssetSource implements AssetSourceInterface
     private $apiKey;
 
     /**
+     * @var array
+     */
+    private $apiClientOptions = [];
+
+    /**
      * @var string
      */
     private $sharedRefreshToken;
@@ -117,6 +122,12 @@ class PixxioAssetSource implements AssetSourceInterface
                     }
                     $this->apiKey = $optionValue;
                 break;
+                case 'apiClientOptions':
+                    if (!is_array($optionValue) || empty($optionValue)) {
+                        throw new \InvalidArgumentException(sprintf('Invalid api client options specified for Pixx.io asset source %s', $assetSourceIdentifier), 1591605348);
+                    }
+                    $this->apiClientOptions = $optionValue;
+                    break;
                 case 'sharedRefreshToken':
                     if (!is_string($optionValue) || empty($optionValue)) {
                         throw new \InvalidArgumentException(sprintf('Invalid shared refresh token specified for Pixx.io asset source %s', $assetSourceIdentifier), 1528806843);
@@ -257,7 +268,8 @@ class PixxioAssetSource implements AssetSourceInterface
             $this->pixxioClient = $this->pixxioServiceFactory->createForAccount(
                 $account->getAccountIdentifier(),
                 $this->apiEndpointUri,
-                $this->apiKey
+                $this->apiKey,
+                $this->apiClientOptions
             );
 
             $this->pixxioClient->authenticate($clientSecret->getRefreshToken());

@@ -44,6 +44,11 @@ final class PixxioClient
     private $apiKey;
 
     /**
+     * @var array
+     */
+    private $apiClientOptions;
+
+    /**
      * @var string
      */
     private $accessToken;
@@ -65,12 +70,14 @@ final class PixxioClient
     /**
      * @param string $apiEndpointUri
      * @param string $apiKey
+     * @param array $apiClientOptions
      */
-    public function __construct(string $apiEndpointUri, string $apiKey)
+    public function __construct(string $apiEndpointUri, string $apiKey, array $apiClientOptions)
     {
         $this->apiEndpointUri = $apiEndpointUri;
         $this->apiKey = $apiKey;
-        $this->guzzleClient = new Client();
+        $this->apiClientOptions = $apiClientOptions;
+        $this->guzzleClient = new Client($this->apiClientOptions);
         $this->imageOptions  = [
             (object)[
                 'width' => 400,
@@ -136,7 +143,7 @@ final class PixxioClient
             'options=' . \GuzzleHttp\json_encode($options)
         );
 
-        $client = new Client();
+        $client = new Client($this->apiClientOptions);
         try {
             return $client->request('GET', $uri);
         } catch (GuzzleException $e) {
@@ -164,7 +171,7 @@ final class PixxioClient
             'accessToken=' . $this->accessToken
         );
 
-        $client = new Client();
+        $client = new Client($this->apiClientOptions);
         try {
             return $client->request(
                 'PUT',
@@ -219,7 +226,7 @@ final class PixxioClient
             'options=' . \GuzzleHttp\json_encode($options)
         );
 
-        $client = new Client();
+        $client = new Client($this->apiClientOptions);
         try {
             return $client->request('GET', $uri);
         } catch (GuzzleException $e) {

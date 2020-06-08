@@ -123,7 +123,7 @@ class PixxioAssetSource implements AssetSourceInterface
                     $this->apiKey = $optionValue;
                 break;
                 case 'apiClientOptions':
-                    if (!is_array($optionValue) || empty($optionValue)) {
+                    if (!is_array($optionValue)) {
                         throw new \InvalidArgumentException(sprintf('Invalid api client options specified for Pixx.io asset source %s', $assetSourceIdentifier), 1591605348);
                     }
                     $this->apiClientOptions = $optionValue;

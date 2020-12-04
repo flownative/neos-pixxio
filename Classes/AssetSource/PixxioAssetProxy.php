@@ -15,6 +15,8 @@ namespace Flownative\Pixxio\AssetSource;
 
 use Behat\Transliterator\Transliterator;
 use Exception;
+use Flownative\Pixxio\Exception\ConnectionException;
+use GuzzleHttp\Client;
 use Neos\Flow\Http\Uri;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\HasRemoteOriginalInterface;
@@ -287,7 +289,17 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
      */
     public function getImportStream()
     {
-        return fopen($this->originalUri, 'rb');
+        $client = new Client($this->assetSource->getAssetSourceOptions()['apiClientOptions'] ?? []);
+        try {
+            $response = $client->request('GET', $this->originalUri);
+            if ($response->getStatusCode() === 200) {
+                return $response->getBody()->detach();
+            } else {
+                return false;
+            }
+        } catch (GuzzleException $e) {
+            throw new ConnectionException('Retrieving file failed: ' . $e->getMessage(), 1542808207);
+        }
     }
 
     /**

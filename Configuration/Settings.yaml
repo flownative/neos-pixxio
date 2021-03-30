@@ -19,6 +19,11 @@ Neos:
           # Please get in touch with Pixx.io support in order to get this key.
           apiKey: ''
 
+          # Options for the Guzzle HTTP Client as specified here
+          # see http://docs.guzzlephp.org/en/6.5/request-options.html
+          # Use this to configure custom certificates or to disable cert verification
+          apiClientOptions: {}
+
           # A pixx.io user refresh token which is shared across all editors in
           # this Neos installation.
           # sharedRefreshToken: ''

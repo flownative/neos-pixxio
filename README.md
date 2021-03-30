@@ -103,6 +103,21 @@ Neos:
               usePixxioThumbnailAsOriginal: true
 ```
 
+Sometimes the API Client needs additional configuration for the tls connection
+like custom timeouts or certificates. 
+See: http://docs.guzzlephp.org/en/6.5/request-options.html
+
+```yaml
+Neos:
+  Media:
+    assetSources:
+      'flownative-pixxio':
+        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
+        assetSourceOptions:
+          apiClientOptions: 
+            'verify': '/path/to/cert.pem'           
+```
+
 ## Run database migrations
 ```bash
 ./flow doctrine:migrate

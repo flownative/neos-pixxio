@@ -6,11 +6,11 @@ use Flownative\Pixxio\AssetSource\PixxioAssetProxyRepository;
 use Flownative\Pixxio\AssetSource\PixxioAssetSource;
 use Flownative\Pixxio\Exception\AccessToAssetDeniedException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
-use Flownative\Pixxio\Exception\Exception;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
 use Neos\Media\Domain\Model\Asset;
+use Neos\Media\Domain\Model\AssetSource\AssetProxy\SupportsIptcMetadataInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceAwareInterface;
 use Neos\Media\Domain\Repository\AssetRepository;
 
@@ -34,6 +34,7 @@ class PixxioCommandController extends CommandController
      * @param string $assetSource Name of the pixxio asset source
      * @param bool $quiet If set, only errors will be displayed.
      * @return void
+     * @throws
      */
     public function tagUsedAssetsCommand(string $assetSource = 'flownative-pixxio', bool $quiet = false): void
     {
@@ -110,6 +111,88 @@ class PixxioCommandController extends CommandController
                     $this->outputLine('  (removed) %s', [$asset->getLabel(), $asset->getUsageCount()]);
                 }
             }
+        }
+    }
+
+    /**
+     * Update metadata
+     *
+     * @param string $assetSource
+     * @param bool $quiet
+     */
+    public function updateMetadataCommand(string $assetSource = 'flownative-pixxio', bool $quiet = false): void
+    {
+        $assetSourceIdentifier = $assetSource;
+        $iterator = $this->assetRepository->findAllIterator();
+
+        !$quiet && $this->outputLine('<b>Updating metadata of currently used assets from source "%s":</b>', [$assetSourceIdentifier]);
+
+        $pixxioAssetSource = new PixxioAssetSource($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
+
+        $assetProxyRepository = $pixxioAssetSource->getAssetProxyRepository();
+        assert($assetProxyRepository instanceof PixxioAssetProxyRepository);
+        $assetProxyRepository->getAssetProxyCache()->flush();
+
+        $assetsWereUpdated = false;
+
+        foreach ($this->assetRepository->iterate($iterator) as $asset) {
+            if (!$asset instanceof Asset) {
+                continue;
+            }
+            if (!$asset instanceof AssetSourceAwareInterface) {
+                continue;
+            }
+            if ($asset->getAssetSourceIdentifier() !== $assetSourceIdentifier) {
+                continue;
+            }
+
+            try {
+                $assetProxy = $asset->getAssetProxy();
+            } catch (AccessToAssetDeniedException $exception) {
+                $this->outputLine('   error   %s', [$exception->getMessage()]);
+                continue;
+            }
+
+            if (!$assetProxy instanceof PixxioAssetProxy) {
+                $this->outputLine('   error   Asset "%s" (%s) could not be accessed via Pixxio-API', [$asset->getLabel(), $asset->getIdentifier()]);
+                continue;
+            }
+
+            !$quiet && $this->outputLine('   %s %s', [$asset->getLabel(), $assetProxy->getIdentifier()]);
+
+            $assetModified = false;
+            $newTitle = $assetProxy->getIptcProperty('Title');
+            $newCaption = $assetProxy->getIptcProperty('CaptionAbstract');
+            $newCopyrightNotice = $assetProxy->getIptcProperty('CopyrightNotice');
+
+            if ($newTitle !== $asset->getTitle()) {
+                !$quiet && $this->outputLine('      <success>New title:     %s</success>', [$newTitle]);
+                $asset->setTitle($newTitle);
+                $assetModified = true;
+            }
+
+            if ($newCaption !== $asset->getCaption()) {
+                !$quiet && $this->outputLine('      <success>New caption:   %s</success>', [$newCaption]);
+                $asset->setCaption($newCaption);
+                $assetModified = true;
+            }
+
+            if ($newCopyrightNotice !== $asset->getCopyrightNotice()) {
+                !$quiet && $this->outputLine('      <success>New copyright:   %s</success>', [$newCopyrightNotice]);
+                $asset->setTitle($newCopyrightNotice);
+                $assetModified = true;
+            }
+
+            if ($assetModified) {
+                $this->assetRepository->update($asset);
+                $assetsWereUpdated = true;
+            }
+        }
+
+        if ($assetsWereUpdated) {
+            !$quiet && $this->outputLine();
+            !$quiet && $this->outputLine('💡 You may want to run ./flow flow:cache:flushone Neos_Fusion');
+            !$quiet && $this->outputLine('   in order to make changes visible in the frontend');
         }
     }
 }

@@ -42,6 +42,8 @@ The API access is configured by three components:
 2. a setting providing the pixx.io API key
 3. a setting providing the pixx.io user refresh token
 
+**To get the needed values for API endpoint and API key, please contact your Pixxio support contact.**
+
 First define the customer-specific service endpoint by adding the URL to your settings:
 
 ```yaml

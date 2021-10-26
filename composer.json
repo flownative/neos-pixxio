@@ -1,22 +1,31 @@
 {
-  "description": "Neos integration for pixx.io",
-  "type": "neos-package",
-  "name": "flownative/neos-pixxio",
-  "license": "MIT",
-  "require": {
-    "neos/flow": "6.* || 7.* || dev-master",
-    "neos/media": "5.* || 6.* || 7.* || dev-master",
-    "guzzlehttp/guzzle": "6.*",
-    "behat/transliterator": "~1.0"
-  },
-  "autoload": {
-    "psr-4": {
-      "Flownative\\Pixxio\\": "Classes/"
+    "description": "Neos integration for pixx.io",
+    "type": "neos-package",
+    "name": "flownative/neos-pixxio",
+    "license": "MIT",
+    "require": {
+        "neos/flow": "6.* || 7.* || dev-master",
+        "neos/media": "5.* || 6.* || 7.* || dev-master",
+        "guzzlehttp/guzzle": "6.*",
+        "behat/transliterator": "~1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Flownative\\Pixxio\\": "Classes/"
+        }
+    },
+    "extra": {
+        "neos": {
+            "package-key": "Flownative.Pixxio"
+        },
+        "applied-flow-migrations": [
+            "Neos.Flow-20190425144900",
+            "Neos.Flow-20190515215000",
+            "Neos.Flow-20200813181400",
+            "Neos.Flow-20201003165200",
+            "Neos.Flow-20201109224100",
+            "Neos.Flow-20201205172733",
+            "Neos.Flow-20201207104500"
+        ]
     }
-  },
-  "extra": {
-    "neos": {
-      "package-key": "Flownative.Pixxio"
-    }
-  }
 }

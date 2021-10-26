@@ -98,6 +98,16 @@ class PixxioAssetSource implements AssetSourceInterface
     private $assetSourceOptions;
 
     /**
+     * @var string
+     */
+    protected $iconPath;
+
+    /**
+     * @var string
+     */
+    protected $description = '';
+
+    /**
      * @param string $assetSourceIdentifier
      * @param array $assetSourceOptions
      */
@@ -161,6 +171,12 @@ class PixxioAssetSource implements AssetSourceInterface
                         }
                     }
                 break;
+                case 'icon':
+                    $this->iconPath = $optionValue;
+                    break;
+                case 'description':
+                    $this->description = $optionValue;
+                    break;
                 default:
                     throw new \InvalidArgumentException(sprintf('Unknown asset source option "%s" specified for Pixx.io asset source "%s". Please check your settings.', $optionName, $assetSourceIdentifier), 1525790910);
             }
@@ -276,4 +292,16 @@ class PixxioAssetSource implements AssetSourceInterface
         }
         return $this->pixxioClient;
     }
+
+    public function getIconUri(): string
+    {
+        return $this->resourceManager->getPublicPackageResourceUriByPath($this->iconPath);
+    }
+
+    public function getDescription(): string
+    {
+        return $this->description;
+    }
+
+
 }

@@ -45,7 +45,7 @@ Neos:
           icon: 'resource://Flownative.Pixxio/Public/Icons/PixxioWhite.svg'
 
           # The description for the asset source
-          description: 'Assets assets'
+          description: 'Pixxio assets'
 
   Neos:
     modules:

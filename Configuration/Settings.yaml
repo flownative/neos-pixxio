@@ -41,6 +41,12 @@ Neos:
             enable: false
             inUseTag: 'used-by-neos'
 
+          # The icon for the asset source
+          icon: 'resource://Flownative.Pixxio/Public/Icons/PixxioWhite.svg'
+
+          # The description for the asset source
+          description: 'Pixxio assets'
+
   Neos:
     modules:
       management:

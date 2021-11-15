@@ -23,6 +23,7 @@ use GuzzleHttp\Psr7\Uri;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Security\Account;
 use Neos\Flow\Security\Context;
+use Neos\Flow\ResourceManagement\ResourceManager;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyRepositoryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceInterface;
 use Neos\Utility\MediaTypes;
@@ -56,6 +57,12 @@ class PixxioAssetSource implements AssetSourceInterface
      * @var Context
      */
     protected $securityContext;
+
+    /**
+     * @Flow\Inject
+     * @var ResourceManager
+     */
+    protected $resourceManager;
 
     /**
      * @var string
@@ -96,6 +103,16 @@ class PixxioAssetSource implements AssetSourceInterface
      * @var array
      */
     private $assetSourceOptions;
+
+    /**
+     * @var string
+     */
+    protected $iconPath;
+
+    /**
+     * @var string
+     */
+    protected $description = '';
 
     /**
      * @param string $assetSourceIdentifier
@@ -161,6 +178,12 @@ class PixxioAssetSource implements AssetSourceInterface
                         }
                     }
                 break;
+                case 'icon':
+                    $this->iconPath = $optionValue;
+                    break;
+                case 'description':
+                    $this->description = $optionValue;
+                    break;
                 default:
                     throw new \InvalidArgumentException(sprintf('Unknown asset source option "%s" specified for Pixx.io asset source "%s". Please check your settings.', $optionName, $assetSourceIdentifier), 1525790910);
             }
@@ -276,4 +299,16 @@ class PixxioAssetSource implements AssetSourceInterface
         }
         return $this->pixxioClient;
     }
+
+    public function getIconUri(): string
+    {
+        return $this->resourceManager->getPublicPackageResourceUriByPath($this->iconPath);
+    }
+
+    public function getDescription(): string
+    {
+        return $this->description;
+    }
+
+
 }

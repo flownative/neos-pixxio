@@ -2,7 +2,7 @@
 [![Packagist](https://img.shields.io/packagist/v/flownative/neos-pixxio.svg)](https://packagist.org/packages/flownative/neos-pixxio)
 [![Maintenance level: Acquaintance](https://img.shields.io/badge/maintenance-%E2%99%A1-ff69b4.svg)](https://www.flownative.com/en/products/open-source.html)
 
-# pixx.io adaptor for Neos 4.x / 5.x
+# pixx.io adaptor for Neos
 
 This [Flow](https://flow.neos.io) package allows you to use assets (ie. pictures and other documents) stored in [pixx.io](https://www.pixxio-bildverwaltung.de/)
 in your Neos website as if these assets were native Neos assets.
@@ -28,7 +28,7 @@ For Neos 4.*:
 $ composer require flownative/neos-pixxio:~1.0
 ```
 
-For Neos 5.*:
+For Neos 5.* and 7.*:
 
 ```bash
 $ composer require flownative/neos-pixxio:~2.0

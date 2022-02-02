@@ -188,6 +188,59 @@ images will not be untagged in the Pixxio media library.
 Note: At this point, the auto-tagging feature is not really optimized for performance. The command merely
 iterates over all assets which were imported from Pixxio and checks if tags need to be updated.
 
+### Category mapping from pixx.io to Neos
+
+Pixx.io offers categories to organize assets in a folder-like structure. Those
+can be mapped to asset collections and tags in Neos, to make them visible for
+the  users.
+
+The configuration for this looks like that:
+
+```yaml
+Flownative:
+  Pixxio:
+    mapping:
+      # map "categories" from pixx.io to Neos
+      categoriesMaximumDepth: 2         # only include the first two levels of categories
+      categories:
+        'People*':                      # the category "path" in pixx.io, shell-style globbing is supported
+          asAssetCollection: true       # map to an asset collection named after the category
+        'People/Employees':
+          asAssetCollection: false      # ignore this category
+```
+
+- The key used is the category identifier from pixx.io as used in the API
+- `asAssetCollection` set to `true` exposes the category as an asset
+  collection named like the category.
+
+Afterwards, run the following command to update the asset collections, ideally
+in a cronjob to keep things up-to-date:
+
+```
+./flow pixxio:importcategoriesascollections
+```
+
+To check what a given category would import, you can use a verbose dry-run:
+
+```
+beach@3bd503e8b61d:/application$ ./flow pixxio:importcategoriesascollections --quiet 0 --dry-run 1
+Importing categories as asset collections via pixx.io API
+o Dokumentation
+= Kunde A
+= Kunde A/Projekt 1
+o Kunde A/Projekt 1/Copy
+o Kunde A/Projekt 1/Design
++ Kunde A/Projekt 2
+o Kunde A/Projekt 2/Copy
+o Kunde A/Projekt 2/Design
+o Marketing
+o home
+o home/Doe_John
+Import done.
+```
+The above would have added "Kunde A/Projekt 2", the items marked "=" exist already,
+and everything else is ignored.
+
 ## Background and Demo
 
 [![Background and Demo](https://img.youtube.com/vi/nG05nn-Yd0I/0.jpg)](https://www.youtube.com/watch?v=nG05nn-Yd0I)

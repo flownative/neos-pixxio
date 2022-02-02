@@ -103,7 +103,6 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
     {
         $this->initialize();
         return $this->assetProxiesIterator->key();
-
     }
 
     public function valid()
@@ -142,15 +141,18 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
 
     /**
      * @return int
+     * @throws \Flownative\Pixxio\Exception\ConnectionException
      */
     public function count(): int
     {
         if ($this->numberOfAssetProxies === null) {
             if (is_array($this->assetProxies)) {
-                return count($this->assetProxies);
+                $this->numberOfAssetProxies = count($this->assetProxies);
             } else {
-                return $this->query->count();
+                $this->numberOfAssetProxies = $this->query->count();
             }
         }
+
+        return $this->numberOfAssetProxies;
     }
 }

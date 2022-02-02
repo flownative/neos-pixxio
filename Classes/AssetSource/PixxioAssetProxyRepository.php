@@ -20,7 +20,6 @@ use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use Neos\Cache\Frontend\StringFrontend;
-use Neos\Cache\Frontend\VariableFrontend;
 use Neos\Flow\ObjectManagement\DependencyInjection\DependencyProxy;
 use Neos\Media\Domain\Model\AssetSource\AssetNotFoundExceptionInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
@@ -42,14 +41,6 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
     private $assetSource;
 
     /**
-     * @param PixxioAssetSource $assetSource
-     */
-    public function __construct(PixxioAssetSource $assetSource)
-    {
-        $this->assetSource = $assetSource;
-    }
-
-    /**
      * @var string
      */
     private $assetTypeFilter = 'All';
@@ -63,6 +54,14 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
      * @var StringFrontend
      */
     protected $assetProxyCache;
+
+    /**
+     * @param PixxioAssetSource $assetSource
+     */
+    public function __construct(PixxioAssetSource $assetSource)
+    {
+        $this->assetSource = $assetSource;
+    }
 
     /**
      * @param string $identifier

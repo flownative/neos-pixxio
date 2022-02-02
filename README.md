@@ -4,7 +4,7 @@
 
 # pixx.io adaptor for Neos
 
-This [Flow](https://flow.neos.io) package allows you to use assets (ie. pictures and other documents) stored in [pixx.io](https://www.pixxio-bildverwaltung.de/)
+This [Flow](https://flow.neos.io) package allows you to use assets (ie. pictures and other documents) stored in [pixx.io](https://www.pixx.io/)
 in your Neos website as if these assets were native Neos assets.
 
 ## About pixx.io
@@ -74,7 +74,7 @@ Neos:
 
 When you committed and deployed these changes, you can log in to the Neos backend and navigate to the pixx.io backend
 module to verify your settings.
-  
+
 If you would like a separate pixx.io user for the logged in Neos user, you can copy and paste your own "refresh token"
 into the form found in the backend module and store it along with your Neos user.
 
@@ -106,7 +106,7 @@ Neos:
 ```
 
 Sometimes the API Client needs additional configuration for the tls connection
-like custom timeouts or certificates. 
+like custom timeouts or certificates.
 See: http://docs.guzzlephp.org/en/6.5/request-options.html
 
 ```yaml
@@ -116,19 +116,19 @@ Neos:
       'flownative-pixxio':
         assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
         assetSourceOptions:
-          apiClientOptions: 
-            'verify': '/path/to/cert.pem'           
+          apiClientOptions:
+            'verify': '/path/to/cert.pem'
 ```
 
 ## Run database migrations
 ```bash
 ./flow doctrine:migrate
-``` 
+```
 
 ## Cleaning up unused assets
 
 Whenever a pixx.io asset is used in Neos, the media file will be copied automatically to the internal Neos asset
-storage. As long as this media is used somewhere on the website, Neos will flag this asset as being in use. 
+storage. As long as this media is used somewhere on the website, Neos will flag this asset as being in use.
 When an asset is not used anymore, the binary data and the corresponding metadata can be removed from the internal
 storage. While this does not happen automatically, it can be easily automated by a recurring task, such as a cron-job.
 
@@ -136,14 +136,14 @@ In order to clean up unused assets, simply run the following command as often as
 
 ```bash
 ./flow media:removeunused --asset-source flownative-pixxio
-``` 
+```
 
 If you'd rather like to invoke this command through a cron-job, you can add two additional flags which make this
 command non-interactive:
 
 ```bash
 ./flow media:removeunused --quiet --assume-yes --asset-source flownative-pixxio
-``` 
+```
 
 ## Auto-Tagging
 
@@ -167,8 +167,8 @@ Neos:
 ```
 
 Since Neos currently cannot handle auto-tagging reliably during runtime, the job must be done through a
-command line command. Simply run the following command for tagging new assets and removing tags from 
-assets which are not in use anymore: 
+command line command. Simply run the following command for tagging new assets and removing tags from
+assets which are not in use anymore:
 
 ```
 ./flow pixxio:tagusedassets
@@ -194,7 +194,7 @@ iterates over all assets which were imported from Pixxio and checks if tags need
 
 ## Credits and license
 
-This plugin was sponsored by [pixx.io](https://www.pixxio-bildverwaltung.de/) and its initial version was developed by
-Robert Lemke of [Flownative](https://www.flownative.com).
+The first version of this plugin was sponsored by [pixx.io](https://www.pixxio-bildverwaltung.de/) and its initial
+version was developed by Robert Lemke of [Flownative](https://www.flownative.com).
 
 See LICENSE for license details.

@@ -45,6 +45,11 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
     private $assetTypeFilter = 'All';
 
     /**
+     * @var ?string
+     */
+    private $assetCollectionFilter;
+
+    /**
      * @var array
      */
     private $orderings = [];
@@ -146,6 +151,22 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
     public function getAssetTypeFilter(): string
     {
         return $this->assetTypeFilter;
+    }
+
+    /**
+     * @param ?string $assetCollectionFilter
+     */
+    public function setAssetCollectionFilter(?string $assetCollectionFilter): void
+    {
+        $this->assetCollectionFilter = $assetCollectionFilter;
+    }
+
+    /**
+     * @return ?string
+     */
+    public function getAssetCollectionFilter(): ?string
+    {
+        return $this->assetCollectionFilter;
     }
 
     /**
@@ -282,6 +303,6 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
             break;
         }
 
-        return $this->assetSource->getPixxioClient()->search($searchTerm, $formatTypes, $fileTypes, $this->offset, $limit, $orderings);
+        return $this->assetSource->getPixxioClient()->search($searchTerm, $formatTypes, $fileTypes, $this->assetCollectionFilter, $this->offset, $limit, $orderings);
     }
 }

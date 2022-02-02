@@ -191,13 +191,14 @@ final class PixxioClient
      * @param string $queryExpression
      * @param array $formatTypes
      * @param array $fileTypes
+     * @param string|null $assetCollectionFilter
      * @param int $offset
      * @param int $limit
      * @param array $orderings
      * @return ResponseInterface
      * @throws ConnectionException
      */
-    public function search(string $queryExpression, array $formatTypes, array $fileTypes, int $offset = 0, int $limit = 50, $orderings = []): ResponseInterface
+    public function search(string $queryExpression, array $formatTypes, array $fileTypes, string $assetCollectionFilter = null, int $offset = 0, int $limit = 50, $orderings = []): ResponseInterface
     {
         $options = new \stdClass();
         $options->pagination = $limit . '-' . (int)($offset / $limit + 1);
@@ -205,6 +206,10 @@ final class PixxioClient
         $options->fields = $this->fields;
         $options->formatType = $formatTypes;
         $options->fileType = implode(',', $fileTypes);
+
+        if ($assetCollectionFilter !== null) {
+            $options->category = 'sub/' . $assetCollectionFilter;
+        }
 
         if (!empty($queryExpression)) {
             $options->searchTerm = urlencode($queryExpression);
@@ -231,6 +236,25 @@ final class PixxioClient
             return $client->request('GET', $uri);
         } catch (GuzzleException $e) {
             throw new ConnectionException('Search failed: ' . $e->getMessage(), 1542808181);
+        }
+    }
+
+    /**
+     * @return ResponseInterface
+     * @throws ConnectionException
+     */
+    public function getCategories(): ResponseInterface
+    {
+        $uri = new Uri( $this->apiEndpointUri . '/json/categories');
+        $uri = $uri->withQuery(
+            'accessToken=' . $this->accessToken
+        );
+
+        $client = new Client($this->apiClientOptions);
+        try {
+            return $client->request('GET', $uri);
+        } catch (GuzzleException $e) {
+            throw new ConnectionException('Retrieving categories failed: ' . $e->getMessage(), 1642430939);
         }
     }
 

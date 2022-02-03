@@ -190,11 +190,20 @@ iterates over all assets which were imported from Pixxio and checks if tags need
 
 ### Category mapping from pixx.io to Neos
 
-Pixx.io offers categories to organize assets in a folder-like structure. Those
+pixx.io offers categories to organize assets in a folder-like structure. Those
 can be mapped to asset collections and tags in Neos, to make them visible for
 the  users.
 
-The configuration for this looks like that:
+.. note::
+   The pixx.io asset source declares itself read-only. Neos does not show asset
+   collections in the UI for read-only asset sources. This has been changed for
+   Neos 7.3.0 and up with https://github.com/neos/neos-development-collection/pull/3481
+
+   If you want to use this feature with older Neos versions, you can use the PR with
+   [cweagans/composer-patches](https://github.com/cweagans/composer-patches#readme)
+   or copy the adjusted template into your project and use `Views.yaml` to activate it.
+
+The configuration for the category import looks like this:
 
 ```yaml
 Flownative:
@@ -203,27 +212,28 @@ Flownative:
       # map "categories" from pixx.io to Neos
       categoriesMaximumDepth: 2         # only include the first two levels of categories
       categories:
+        'People/Employees':
+          asAssetCollection: false      # ignore this category, put more specific patterns first
         'People*':                      # the category "path" in pixx.io, shell-style globbing is supported
           asAssetCollection: true       # map to an asset collection named after the category
-        'People/Employees':
-          asAssetCollection: false      # ignore this category
 ```
 
-- The key used is the category identifier from pixx.io as used in the API
+- The key used is the category identifier from pixx.io as used in the API,
+  without leading slash
 - `asAssetCollection` set to `true` exposes the category as an asset
   collection named like the category.
 
 Afterwards, run the following command to update the asset collections, ideally
 in a cronjob to keep things up-to-date:
 
-```
+```bash
 ./flow pixxio:importcategoriesascollections
 ```
 
 To check what a given category would import, you can use a verbose dry-run:
 
-```
-beach@3bd503e8b61d:/application$ ./flow pixxio:importcategoriesascollections --quiet 0 --dry-run 1
+```bash
+$ ./flow pixxio:importcategoriesascollections --quiet 0 --dry-run 1
 Importing categories as asset collections via pixx.io API
 o Dokumentation
 = Kunde A

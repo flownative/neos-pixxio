@@ -179,8 +179,11 @@ It is recommended to run this command through a cron-job, ideally in combination
 command. It's important to run the `removeunused`-command *after* the tagging command, because otherwise removed
 images will not be untagged in the pixx.io media library.
 
-Note: At this point, the auto-tagging feature is not really optimized for performance. The command merely
+---
+**NOTE**  
+At this point, the auto-tagging feature is not really optimized for performance. The command merely
 iterates over all assets which were imported from pixx.io and checks if tags need to be updated.
+---
 
 ### Category mapping from pixx.io to Neos
 
@@ -188,14 +191,16 @@ pixx.io offers categories to organize assets in a folder-like structure. Those
 can be mapped to asset collections and tags in Neos, to make them visible for
 the  users.
 
-.. note::
-   The pixx.io asset source declares itself read-only. Neos does not show asset
-   collections in the UI for read-only asset sources. This has been changed for
-   Neos 7.3.0 and up with https://github.com/neos/neos-development-collection/pull/3481
+---
+**NOTE**  
+The pixx.io asset source declares itself read-only. Neos does not show asset
+collections in the UI for read-only asset sources. This has been changed for
+Neos 7.3.0 and up with https://github.com/neos/neos-development-collection/pull/3481
 
-   If you want to use this feature with older Neos versions, you can use the PR with
-   [cweagans/composer-patches](https://github.com/cweagans/composer-patches#readme)
-   or copy the adjusted template into your project and use `Views.yaml` to activate it.
+ If you want to use this feature with older Neos versions, you can use the PR with
+ [cweagans/composer-patches](https://github.com/cweagans/composer-patches#readme)
+ or copy the adjusted template into your project and use `Views.yaml` to activate it.
+---
 
 The configuration for the category import looks like this:
 

@@ -22,7 +22,6 @@ use GuzzleHttp\Psr7\Uri;
 use Neos\Media\Domain\Model\AssetSource\SupportsSortingInterface;
 use Psr\Http\Message\ResponseInterface;
 
-
 /**
  * Pixx.io API client
  */
@@ -198,7 +197,7 @@ final class PixxioClient
      * @return ResponseInterface
      * @throws ConnectionException
      */
-    public function search(string $queryExpression, array $formatTypes, array $fileTypes, string $assetCollectionFilter = null, int $offset = 0, int $limit = 50, $orderings = []): ResponseInterface
+    public function search(string $queryExpression, array $formatTypes, array $fileTypes, string $assetCollectionFilter = null, int $offset = 0, int $limit = 50, array $orderings = []): ResponseInterface
     {
         $options = new \stdClass();
         $options->pagination = $limit . '-' . (int)($offset / $limit + 1);
@@ -215,9 +214,9 @@ final class PixxioClient
             $options->searchTerm = urlencode($queryExpression);
         }
 
-        if (isset($orderings['filename'])) {
-            $options->sortBy = 'filename';
-            $options->sortDirection = ($orderings['filename'] === SupportsSortingInterface::ORDER_DESCENDING) ? 'descending' : 'ascending';
+        if (isset($orderings['resource.filename'])) {
+            $options->sortBy = 'fileName';
+            $options->sortDirection = ($orderings['resource.filename'] === SupportsSortingInterface::ORDER_DESCENDING) ? 'descending' : 'ascending';
         }
 
         if (isset($orderings['lastModified'])) {

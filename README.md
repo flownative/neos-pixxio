@@ -4,10 +4,11 @@
 
 # pixx.io adaptor for Neos
 
-This [Flow](https://flow.neos.io) package allows you to use assets (ie. pictures and other documents) stored in [pixx.io](https://www.pixx.io/)
-in your Neos website as if these assets were native Neos assets.
+This [Flow](https://flow.neos.io) package allows you to use assets (ie. pictures and other documents)
+stored in [pixx.io](https://www.pixx.io/) in your Neos website as if these assets were native Neos assets.
 
 ## About pixx.io
+
 pixx.io offers an intelligent solution for digital asset management. The software makes working with
 pictures, graphics and video files easier. pixx.io is safe, efficient and easy to understand and handle.
 
@@ -22,16 +23,14 @@ pictures, graphics and video files easier. pixx.io is safe, efficient and easy t
 The pixx.io connector is installed as a regular Flow package via Composer. For your existing
 project, simply include `flownative/neos-pixxio` into the dependencies of your Flow or Neos distribution:
 
-For Neos 4.*:
-
 ```bash
-$ composer require flownative/neos-pixxio:~1.0
+composer require flownative/neos-pixxio
 ```
 
-For Neos 5.* and 7.*:
+After installation you need to run database migrations:
 
 ```bash
-$ composer require flownative/neos-pixxio:~2.0
+./flow doctrine:migrate
 ```
 
 ## Enabling pixx.io API access
@@ -42,7 +41,7 @@ The API access is configured by three components:
 2. a setting providing the pixx.io API key
 3. a setting providing the pixx.io user refresh token
 
-**To get the needed values for API endpoint and API key, please contact your Pixxio support contact.**
+**To get the needed values for API endpoint and API key, please contact your pixx.io support contact.**
 
 First define the customer-specific service endpoint by adding the URL to your settings:
 
@@ -88,8 +87,8 @@ pixx.io. This greatly improves import speed and produces good results in most ca
 like Adobe Photoshop, can be used seamlessly in Neos without the need to prior converting them into a web-compatible image
 format.
 
-It is possible though, to configure this plugin to always use the high-res original for import. By default, formats like SVG or PDF
-are imported this way. You can add more types through the similar entries like in the following settings:
+It is possible though, to configure this plugin to always use the high-res original for import. By default, formats like
+SVG or PDF are imported this way. You can add more types through the similar entries like in the following settings:
 
 ```yaml
 Neos:
@@ -120,11 +119,6 @@ Neos:
             'verify': '/path/to/cert.pem'
 ```
 
-## Run database migrations
-```bash
-./flow doctrine:migrate
-```
-
 ## Cleaning up unused assets
 
 Whenever a pixx.io asset is used in Neos, the media file will be copied automatically to the internal Neos asset
@@ -149,7 +143,7 @@ command non-interactive:
 
 This plugin also offers an auto-tagging feature. When auto-tagging is enabled, Neos will automatically flag assets
 which are currently used with a user-defined keyword. When as the asset is not used in Neos anymore, this keyword
-is removed. This keyword is applied to the actual file / asset in the Pixxio media library and helps editors to keep
+is removed. This keyword is applied to the actual file / asset in the pixx.io media library and helps editors to keep
 an overview of which assets are currently used by Neos.
 
 Auto-tagging is configured as follows:
@@ -183,10 +177,10 @@ Tagging used assets of asset source "flownative-pixxio" via Pixxio API:
 
 It is recommended to run this command through a cron-job, ideally in combination with the `media:removeunused`
 command. It's important to run the `removeunused`-command *after* the tagging command, because otherwise removed
-images will not be untagged in the Pixxio media library.
+images will not be untagged in the pixx.io media library.
 
 Note: At this point, the auto-tagging feature is not really optimized for performance. The command merely
-iterates over all assets which were imported from Pixxio and checks if tags need to be updated.
+iterates over all assets which were imported from pixx.io and checks if tags need to be updated.
 
 ### Category mapping from pixx.io to Neos
 

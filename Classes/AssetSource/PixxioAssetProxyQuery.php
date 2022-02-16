@@ -252,6 +252,9 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
             $response = $this->sendSearchRequest($this->limit, $this->orderings);
             $responseObject = \GuzzleHttp\json_decode($response->getBody());
 
+            if (!isset($responseObject->files)) {
+                return [];
+            }
             foreach ($responseObject->files as $rawAsset) {
                 $assetProxies[] = PixxioAssetProxy::fromJsonObject($rawAsset, $this->assetSource);
             }

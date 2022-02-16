@@ -20,21 +20,22 @@ use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use Neos\Cache\Frontend\StringFrontend;
-use Neos\Cache\Frontend\VariableFrontend;
 use Neos\Flow\ObjectManagement\DependencyInjection\DependencyProxy;
+use Neos\Media\Domain\Model\AssetCollection;
 use Neos\Media\Domain\Model\AssetSource\AssetNotFoundExceptionInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyRepositoryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceConnectionExceptionInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetTypeFilter;
+use Neos\Media\Domain\Model\AssetSource\SupportsCollectionsInterface;
 use Neos\Media\Domain\Model\AssetSource\SupportsSortingInterface;
 use Neos\Media\Domain\Model\Tag;
 
 /**
  * PixxioAssetProxyRepository
  */
-class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, SupportsSortingInterface
+class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, SupportsSortingInterface, SupportsCollectionsInterface
 {
     /**
      * @var PixxioAssetSource
@@ -42,12 +43,9 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
     private $assetSource;
 
     /**
-     * @param PixxioAssetSource $assetSource
+     * @var string|null
      */
-    public function __construct(PixxioAssetSource $assetSource)
-    {
-        $this->assetSource = $assetSource;
-    }
+    protected $assetCollectionFilter;
 
     /**
      * @var string
@@ -63,6 +61,14 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
      * @var StringFrontend
      */
     protected $assetProxyCache;
+
+    /**
+     * @param PixxioAssetSource $assetSource
+     */
+    public function __construct(PixxioAssetSource $assetSource)
+    {
+        $this->assetSource = $assetSource;
+    }
 
     /**
      * @param string $identifier
@@ -115,6 +121,11 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         $this->assetTypeFilter = (string)$assetType ?: 'All';
     }
 
+    public function filterByCollection(AssetCollection $assetCollection = null): void
+    {
+        $this->assetCollectionFilter = $assetCollection ? $assetCollection->getTitle() : null;
+    }
+
     /**
      * @return AssetProxyQueryResultInterface
      */
@@ -122,6 +133,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
     {
         $query = new PixxioAssetProxyQuery($this->assetSource);
         $query->setAssetTypeFilter($this->assetTypeFilter);
+        $query->setAssetCollectionFilter($this->assetCollectionFilter);
         $query->setOrderings($this->orderings);
         return new PixxioAssetProxyQueryResult($query);
     }
@@ -135,6 +147,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         $query = new PixxioAssetProxyQuery($this->assetSource);
         $query->setSearchTerm($searchTerm);
         $query->setAssetTypeFilter($this->assetTypeFilter);
+        $query->setAssetCollectionFilter($this->assetCollectionFilter);
         $query->setOrderings($this->orderings);
         return new PixxioAssetProxyQueryResult($query);
     }
@@ -148,6 +161,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         $query = new PixxioAssetProxyQuery($this->assetSource);
         $query->setSearchTerm($tag->getLabel());
         $query->setAssetTypeFilter($this->assetTypeFilter);
+        $query->setAssetCollectionFilter($this->assetCollectionFilter);
         $query->setOrderings($this->orderings);
         return new PixxioAssetProxyQueryResult($query);
     }
@@ -159,6 +173,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
     {
         $query = new PixxioAssetProxyQuery($this->assetSource);
         $query->setAssetTypeFilter($this->assetTypeFilter);
+        $query->setAssetCollectionFilter($this->assetCollectionFilter);
         $query->setOrderings($this->orderings);
         return new PixxioAssetProxyQueryResult($query);
     }

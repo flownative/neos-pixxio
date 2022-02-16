@@ -1,3 +1,10 @@
+Flownative:
+  Pixxio:
+    mapping:
+      # map "categories" from pixx.io to Neos
+      categoriesMaximumDepth: 10
+      categories: []
+
 Neos:
   Flow:
     mvc:

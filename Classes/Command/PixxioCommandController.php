@@ -9,10 +9,15 @@ use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
+use Neos\Flow\Cli\Exception\StopCommandException;
+use Neos\Flow\Persistence\Exception\IllegalObjectTypeException;
 use Neos\Media\Domain\Model\Asset;
-use Neos\Media\Domain\Model\AssetSource\AssetProxy\SupportsIptcMetadataInterface;
+use Neos\Media\Domain\Model\AssetCollection;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceAwareInterface;
+use Neos\Media\Domain\Repository\AssetCollectionRepository;
 use Neos\Media\Domain\Repository\AssetRepository;
+use Neos\Media\Domain\Repository\TagRepository;
+use Neos\Media\Domain\Service\AssetSourceService;
 
 class PixxioCommandController extends CommandController
 {
@@ -21,6 +26,30 @@ class PixxioCommandController extends CommandController
      * @var AssetRepository
      */
     protected $assetRepository;
+
+    /**
+     * @Flow\Inject
+     * @var AssetSourceService
+     */
+    protected $assetSourceService;
+
+    /**
+     * @Flow\Inject
+     * @var TagRepository
+     */
+    protected $tagRepository;
+
+    /**
+     * @Flow\Inject
+     * @var AssetCollectionRepository
+     */
+    protected $assetCollectionRepository;
+
+    /**
+     * @Flow\InjectConfiguration(path="mapping", package="Flownative.Pixxio")
+     * @var array
+     */
+    protected $mapping = [];
 
     /**
      * @Flow\InjectConfiguration(path="assetSources", package="Neos.Media")
@@ -194,5 +223,81 @@ class PixxioCommandController extends CommandController
             !$quiet && $this->outputLine('💡 You may want to run ./flow flow:cache:flushone Neos_Fusion');
             !$quiet && $this->outputLine('   in order to make changes visible in the frontend');
         }
+    }
+
+    /**
+     * Import pixx.io categories as asset collections
+     *
+     * @param string $assetSourceIdentifier Name of the pixx.io asset source (defaults to "flownative-pixxio")
+     * @param bool $quiet If set, only errors will be displayed.
+     * @param bool $dryRun If set, no changes will be made.
+     * @return void
+     * @throws IllegalObjectTypeException
+     * @throws \Flownative\Pixxio\Exception\ConnectionException
+     */
+    public function importCategoriesAsCollectionsCommand(string $assetSourceIdentifier = 'flownative-pixxio', bool $quiet = true, bool $dryRun = false): void
+    {
+        !$quiet && $this->outputLine('<b>Importing categories as asset collections via pixx.io API</b>');
+
+        try {
+            $pixxioAssetSource = new PixxioAssetSource($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
+            $cantoClient = $pixxioAssetSource->getPixxioClient();
+        } catch (\Exception $e) {
+            $this->outputLine('<error>pixx.io client could not be created</error>');
+            $this->quit(1);
+        }
+
+        $response = $cantoClient->getCategories();
+        $responseObject = \GuzzleHttp\json_decode($response->getBody());
+        foreach ($responseObject->categories as $categoryPath) {
+            $categoryPath = ltrim($categoryPath, '/');
+            if ($this->shouldBeImportedAsAssetCollection($categoryPath)) {
+                $assetCollection = $this->assetCollectionRepository->findOneByTitle($categoryPath);
+
+                if (!($assetCollection instanceof AssetCollection)) {
+                    if (!$dryRun) {
+                        $assetCollection = new AssetCollection($categoryPath);
+                        $this->assetCollectionRepository->add($assetCollection);
+                    }
+                    !$quiet && $this->outputLine('+ %s', [$categoryPath]);
+                } else {
+                    !$quiet && $this->outputLine('= %s', [$categoryPath]);
+                }
+            } else {
+                !$quiet && $this->outputLine('o %s', [$categoryPath]);
+            }
+        }
+
+        !$quiet && $this->outputLine('<success>Import done.</success>');
+    }
+
+    public function shouldBeImportedAsAssetCollection(string $categoryPath): bool
+    {
+        $categoriesMapping = $this->mapping['categories'];
+        if (empty($categoriesMapping)) {
+            $this->outputLine('<error>No categories configured for mapping</error>');
+            $this->quit(1);
+        }
+
+        $categoryPath = ltrim($categoryPath, '/');
+
+        // depth limit
+        if (substr_count($categoryPath, '/') >= $this->mapping['categoriesMaximumDepth']) {
+            return false;
+        }
+
+        // full match
+        if (array_key_exists($categoryPath, $categoriesMapping)) {
+            return $categoriesMapping[$categoryPath]['asAssetCollection'];
+        }
+
+        // glob match
+        foreach ($categoriesMapping as $mappedCategory => $mapping) {
+            if (fnmatch($mappedCategory, $categoryPath)) {
+                return $mapping['asAssetCollection'];
+            }
+        }
+
+        return false;
     }
 }

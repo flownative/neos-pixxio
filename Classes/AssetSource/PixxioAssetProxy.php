@@ -14,10 +14,12 @@ namespace Flownative\Pixxio\AssetSource;
  */
 
 use Behat\Transliterator\Transliterator;
-use GuzzleHttp\Psr7\Uri;
 use Exception;
 use Flownative\Pixxio\Exception\ConnectionException;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\Uri;
+use Neos\Flow\Annotations as Flow;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\HasRemoteOriginalInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\SupportsIptcMetadataInterface;
@@ -26,7 +28,6 @@ use Neos\Media\Domain\Model\ImportedAsset;
 use Neos\Media\Domain\Repository\ImportedAssetRepository;
 use Neos\Utility\MediaTypes;
 use Psr\Http\Message\UriInterface;
-use Neos\Flow\Annotations as Flow;
 use stdClass;
 
 /**
@@ -152,7 +153,7 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
                 if (isset($modifiedImagePaths[2])) {
                     $assetProxy->originalUri = new Uri($modifiedImagePaths[2]);
                 }
-            } else if (is_object($modifiedImagePaths)) {
+            } elseif (is_object($modifiedImagePaths)) {
                 if (isset($modifiedImagePaths->{'0'})) {
                     $assetProxy->thumbnailUri = new Uri($modifiedImagePaths->{'0'});
                 }
@@ -285,7 +286,8 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
     }
 
     /**
-     * @return resource
+     * @return bool|resource
+     * @throws ConnectionException
      */
     public function getImportStream()
     {
@@ -294,11 +296,11 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
             $response = $client->request('GET', $this->originalUri);
             if ($response->getStatusCode() === 200) {
                 return $response->getBody()->detach();
-            } else {
-                return false;
             }
+
+            return false;
         } catch (GuzzleException $e) {
-            throw new ConnectionException('Retrieving file failed: ' . $e->getMessage(), 1542808207);
+            throw new ConnectionException('Retrieving file failed: ' . $e->getMessage(), 1542808207, $e);
         }
     }
 

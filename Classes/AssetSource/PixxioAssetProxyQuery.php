@@ -18,9 +18,11 @@ use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use GuzzleHttp\Psr7\Response;
 use Neos\Flow\Annotations\Inject;
-use Psr\Log\LoggerInterface as SystemLoggerInterface;
+use Neos\Flow\Log\ThrowableStorageInterface;
+use Neos\Flow\Log\Utility\LogEnvironment;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  *
@@ -41,6 +43,11 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
      * @var string
      */
     private $assetTypeFilter = 'All';
+
+    /**
+     * @var ?string
+     */
+    private $assetCollectionFilter;
 
     /**
      * @var array
@@ -64,9 +71,15 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
 
     /**
      * @Inject
-     * @var SystemLoggerInterface
+     * @var LoggerInterface
      */
     protected $logger;
+
+    /**
+     * @Inject
+     * @var ThrowableStorageInterface
+     */
+    protected $throwableStorage;
 
     /**
      * @param PixxioAssetSource $assetSource
@@ -92,7 +105,6 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
         return $this->offset;
     }
 
-
     /**
      * @param int $limit
      */
@@ -112,7 +124,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
     /**
      * @param string $searchTerm
      */
-    public function setSearchTerm(string $searchTerm)
+    public function setSearchTerm(string $searchTerm): void
     {
         $this->searchTerm = $searchTerm;
     }
@@ -128,7 +140,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
     /**
      * @param string $assetTypeFilter
      */
-    public function setAssetTypeFilter(string $assetTypeFilter)
+    public function setAssetTypeFilter(string $assetTypeFilter): void
     {
         $this->assetTypeFilter = $assetTypeFilter;
     }
@@ -139,6 +151,22 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
     public function getAssetTypeFilter(): string
     {
         return $this->assetTypeFilter;
+    }
+
+    /**
+     * @param ?string $assetCollectionFilter
+     */
+    public function setAssetCollectionFilter(?string $assetCollectionFilter): void
+    {
+        $this->assetCollectionFilter = $assetCollectionFilter;
+    }
+
+    /**
+     * @return ?string
+     */
+    public function getAssetCollectionFilter(): ?string
+    {
+        return $this->assetCollectionFilter;
     }
 
     /**
@@ -192,22 +220,30 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
 
             if (!isset($responseObject->quantity)) {
                 if (isset($responseObject->help)) {
-                    $this->logger->logException(new ConnectionException('Connection to pixx.io failed: ' . $responseObject->help, 1526629493));
+                    $message = $this->throwableStorage->logThrowable(new ConnectionException('Query to pixx.io failed: ' . $responseObject->help, 1526629493));
+                    $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
                 }
                 return 0;
             }
             return $responseObject->quantity;
         } catch (AuthenticationFailedException $exception) {
-            $this->logger->logException(new ConnectionException('Connection to pixx.io failed: ' . $exception->getMessage(), 1526629541));
+            $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1526629541, $exception));
+            $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
             return 0;
         } catch (MissingClientSecretException $exception) {
-            $this->logger->logException(new ConnectionException('Connection to pixx.io failed: ' . $exception->getMessage(), 1526629547));
+            $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1526629547, $exception));
+            $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
+            return 0;
+        } catch (ConnectionException $exception) {
+            $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1643823324, $exception));
+            $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
             return 0;
         }
     }
 
     /**
      * @return PixxioAssetProxy[]
+     * @throws \Exception
      */
     public function getArrayResult(): array
     {
@@ -220,10 +256,12 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
                 $assetProxies[] = PixxioAssetProxy::fromJsonObject($rawAsset, $this->assetSource);
             }
         } catch (AuthenticationFailedException $exception) {
-            $this->logger->logException(new ConnectionException('Connection to pixx.io failed: ' . $exception->getMessage(), 1526629541));
+            $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1643822709, $exception));
+            $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
             return [];
         } catch (MissingClientSecretException $exception) {
-            $this->logger->logException(new ConnectionException('Connection to pixx.io failed: ' . $exception->getMessage(), 1526629547));
+            $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1643822727, $exception));
+            $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
             return [];
         }
         return $assetProxies;
@@ -235,6 +273,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
      * @return Response
      * @throws AuthenticationFailedException
      * @throws MissingClientSecretException
+     * @throws ConnectionException
      */
     private function sendSearchRequest(int $limit, array $orderings): Response
     {
@@ -264,6 +303,6 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
             break;
         }
 
-        return $this->assetSource->getPixxioClient()->search($searchTerm, $formatTypes, $fileTypes, $this->offset, $limit, $orderings);
+        return $this->assetSource->getPixxioClient()->search($searchTerm, $formatTypes, $fileTypes, $this->assetCollectionFilter, $this->offset, $limit, $orderings);
     }
 }

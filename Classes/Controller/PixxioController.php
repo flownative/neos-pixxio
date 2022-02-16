@@ -12,12 +12,12 @@ namespace Flownative\Pixxio\Controller;
  * information, please view the LICENSE file which was distributed with this
  * source code.
  */
+
 use Flownative\Pixxio\AssetSource\PixxioAssetSource;
 use Flownative\Pixxio\Domain\Model\ClientSecret;
 use Flownative\Pixxio\Domain\Repository\ClientSecretRepository;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
-use Flownative\Pixxio\Service\PixxioServiceFactory;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\Exception\StopActionException;
 use Neos\Flow\Mvc\Exception\UnsupportedRequestTypeException;
@@ -44,12 +44,6 @@ class PixxioController extends AbstractModuleController
      * @var ClientSecretRepository
      */
     protected $clientSecretRepository;
-
-    /**
-     * @Flow\Inject
-     * @var PixxioServiceFactory
-     */
-    protected $pixxioServiceFactory;
 
     /**
      * @return void

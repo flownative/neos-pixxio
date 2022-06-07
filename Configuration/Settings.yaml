@@ -49,18 +49,19 @@ Neos:
             inUseTag: 'used-by-neos'
 
           # Image options, are the formats returned for use in the asset properties "thumbnailUri", "previewUri" and "originalUri"
+          # imageOptions parameter are described here: https://tutorial.pixxio.cloud/cgi-bin/api/pixxio-api.pl/documentation/generalInformation/imageOptions
+          # Setting the "crop" parameter, removes the "height" attribute, and creates a not-cropped version
           imageOptions:
-            -
+            thumbnailUri:
               width: 400
               height: 400
               quality: 90
-              crop: true
-            -
+              crop: false
+            previewUri:
               width: 1500
               height: 1500
               quality: 90
-              crop: true
-            -
+            originalUri:
               sizeMax: 1920
               quality: 90
 

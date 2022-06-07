@@ -119,6 +119,39 @@ Neos:
             'verify': '/path/to/cert.pem'
 ```
 
+## Using ImageOptions parameters for files
+
+Via configuration, you can set what dimensions the returned images must have. The sizes are defined by the following keys:
+ * `thumbnailUri` used in the media browser list
+ * `previewUri` used in the detail page of a asset
+ * `originalUri` used for downloading the asset
+
+The configuration is by default
+
+```yaml
+Media:
+  assetSources:
+    'flownative-pixxio':
+      imageOptions:
+        thumbnailUri:
+          width: 400
+          height: 400
+          quality: 90
+          crop: false
+        previewUri:
+          width: 1500
+          height: 1500
+          quality: 90
+        originalUri:
+          sizeMax: 1920
+          quality: 90
+```
+
+Each imageOptions can be overridden from your own packages configuration, by addressing the specific preset key.
+
+By default, the assets from Pixx.io is returned in a cropped format. When this is the case, a editor can't see if a asset is horizontal or vertical, when looking in the Media Browser list.
+By setting `crop: false` the image will be returned in a not-cropped version, and it's visible for the editor, to see the assets orientation
+
 ## Cleaning up unused assets
 
 Whenever a pixx.io asset is used in Neos, the media file will be copied automatically to the internal Neos asset

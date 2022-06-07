@@ -78,8 +78,36 @@ final class PixxioClient
         $this->apiKey = $apiKey;
         $this->apiClientOptions = $apiClientOptions;
         $this->guzzleClient = new Client($this->apiClientOptions);
+        $this->configureImageOptionsWithFallback($imageOptions);
+    }
 
-        foreach ($imageOptions as $imageOption) {
+    private function configureImageOptionsWithFallback(array $imageOptions): void
+    {
+        $imageOptionsPresets = [
+            'thumbnailUri' =>
+                (object)[
+                    'width' => 400,
+                    'height' => 400,
+                    'quality' => 90
+                ],
+            'previewUri' =>
+                (object)[
+                    'width' => 1500,
+                    'height' => 1500,
+                    'quality' => 90
+                ],
+            'originalUri' =>
+                (object)[
+                    'sizeMax' => 1920,
+                    'quality' => 90
+                ]
+        ];
+        foreach ($imageOptionsPresets as $imageOptionPresetKey => $imageOptionPresetConfiguration) {
+            if (isset($imageOptions[$imageOptionPresetKey]) === false) {
+                $this->imageOptions[] = $imageOptionPresetConfiguration;
+                continue;
+            }
+            $imageOption = $imageOptions[$imageOptionPresetKey];
             if (isset($imageOption['crop']) && $imageOption['crop'] === false && isset($imageOption['height'])) {
                 unset($imageOption['height']);
                 unset($imageOption['crop']);

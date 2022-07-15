@@ -269,7 +269,7 @@ class PixxioAssetSource implements AssetSourceInterface
     {
         if ($this->pixxioClient === null) {
 
-            if ($this->securityContext->isInitialized()) {
+            if ($this->securityContext->isInitialized() && $this->securityContext->getAccount()) {
                 $account = $this->securityContext->getAccount();
                 $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
             } else {

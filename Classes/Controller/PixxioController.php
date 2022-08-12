@@ -61,7 +61,7 @@ class PixxioController extends AbstractModuleController
 
         try {
             $assetSource = new PixxioAssetSource('flownative-pixxio', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']);
-            $client = $assetSource->getPixxioClient();
+            $assetSource->getPixxioClient();
             $this->view->assign('connectionSucceeded', true);
         } catch (MissingClientSecretException $e) {
         } catch (AuthenticationFailedException $e) {

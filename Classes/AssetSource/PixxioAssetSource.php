@@ -152,7 +152,7 @@ class PixxioAssetSource implements AssetSourceInterface
                     break;
                 case 'imageOptions':
                     if (!is_array($optionValue)) {
-                        throw new \InvalidArgumentException(sprintf('Invalid image options specified for Pixx.io asset source %s', $assetSourceIdentifier), 1591605348);
+                        throw new \InvalidArgumentException(sprintf('Invalid image options specified for Pixx.io asset source %s', $assetSourceIdentifier), 1591605349);
                     }
                     $this->imageOptions = $optionValue;
                     break;

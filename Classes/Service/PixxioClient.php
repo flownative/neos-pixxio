@@ -85,19 +85,19 @@ final class PixxioClient
     {
         $imageOptionsPresets = [
             'thumbnailUri' =>
-                (object)[
+                [
                     'width' => 400,
                     'height' => 400,
                     'quality' => 90
                 ],
             'previewUri' =>
-                (object)[
+                [
                     'width' => 1500,
                     'height' => 1500,
                     'quality' => 90
                 ],
             'originalUri' =>
-                (object)[
+                [
                     'sizeMax' => 1920,
                     'quality' => 90
                 ]

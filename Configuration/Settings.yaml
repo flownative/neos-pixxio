@@ -50,7 +50,7 @@ Neos:
 
           # Image options, are the formats returned for use in the asset properties "thumbnailUri", "previewUri" and "originalUri"
           # imageOptions parameter are described here: https://tutorial.pixxio.cloud/cgi-bin/api/pixxio-api.pl/documentation/generalInformation/imageOptions
-          # Setting the "crop" parameter, removes the "height" attribute, and creates a not-cropped version
+          # Setting the "crop" parameter, removes the "height" attribute, and creates a non-cropped version
           imageOptions:
             thumbnailUri:
               width: 400

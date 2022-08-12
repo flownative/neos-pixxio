@@ -43,14 +43,16 @@ class PixxioServiceFactory
      * @param string $apiEndpointUri
      * @param string $apiKey
      * @param array $apiClientOptions
+     * @param array $imageOptions
      * @return PixxioClient
      */
-    public function createForAccount(string $accountIdentifier, string $apiEndpointUri, string $apiKey, array $apiClientOptions)
+    public function createForAccount(string $accountIdentifier, string $apiEndpointUri, string $apiKey, array $apiClientOptions, array $imageOptions)
     {
         $client = new PixxioClient(
             $apiEndpointUri,
             $apiKey,
-            $apiClientOptions
+            $apiClientOptions,
+            $imageOptions
         );
         return $client;
     }

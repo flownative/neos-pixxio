@@ -70,29 +70,50 @@ final class PixxioClient
      * @param string $apiEndpointUri
      * @param string $apiKey
      * @param array $apiClientOptions
+     * @param array $imageOptions
      */
-    public function __construct(string $apiEndpointUri, string $apiKey, array $apiClientOptions)
+    public function __construct(string $apiEndpointUri, string $apiKey, array $apiClientOptions, array $imageOptions)
     {
         $this->apiEndpointUri = $apiEndpointUri;
         $this->apiKey = $apiKey;
         $this->apiClientOptions = $apiClientOptions;
         $this->guzzleClient = new Client($this->apiClientOptions);
-        $this->imageOptions  = [
-            (object)[
-                'width' => 400,
-                'height' => 400,
-                'quality' => 90
-            ],
-            (object)[
-                'width' => 1500,
-                'height' => 1500,
-                'quality' => 90
-            ],
-            (object)[
-                'sizeMax' => 1920,
-                'quality' => 90
-            ]
+        $this->configureImageOptionsWithFallback($imageOptions);
+    }
+
+    private function configureImageOptionsWithFallback(array $imageOptions): void
+    {
+        $imageOptionsPresets = [
+            'thumbnailUri' =>
+                [
+                    'width' => 400,
+                    'height' => 400,
+                    'quality' => 90
+                ],
+            'previewUri' =>
+                [
+                    'width' => 1500,
+                    'height' => 1500,
+                    'quality' => 90
+                ],
+            'originalUri' =>
+                [
+                    'sizeMax' => 1920,
+                    'quality' => 90
+                ]
         ];
+        foreach ($imageOptionsPresets as $imageOptionPresetKey => $imageOptionPresetConfiguration) {
+            if (isset($imageOptions[$imageOptionPresetKey]) === false) {
+                $this->imageOptions[] = $imageOptionPresetConfiguration;
+                continue;
+            }
+            $imageOption = $imageOptions[$imageOptionPresetKey];
+            if (isset($imageOption['crop']) && $imageOption['crop'] === false && isset($imageOption['height'])) {
+                unset($imageOption['height']);
+                unset($imageOption['crop']);
+            }
+            $this->imageOptions[] = $imageOption;
+        }
     }
 
     /**

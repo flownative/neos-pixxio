@@ -80,6 +80,11 @@ class PixxioAssetSource implements AssetSourceInterface
     private $apiClientOptions = [];
 
     /**
+     * @var array
+     */
+    private $imageOptions = [];
+
+    /**
      * @var string
      */
     private $sharedRefreshToken;
@@ -144,6 +149,12 @@ class PixxioAssetSource implements AssetSourceInterface
                         throw new \InvalidArgumentException(sprintf('Invalid api client options specified for Pixx.io asset source %s', $assetSourceIdentifier), 1591605348);
                     }
                     $this->apiClientOptions = $optionValue;
+                    break;
+                case 'imageOptions':
+                    if (!is_array($optionValue)) {
+                        throw new \InvalidArgumentException(sprintf('Invalid image options specified for Pixx.io asset source %s', $assetSourceIdentifier), 1591605349);
+                    }
+                    $this->imageOptions = $optionValue;
                     break;
                 case 'sharedRefreshToken':
                     if (!is_string($optionValue) || empty($optionValue)) {
@@ -292,7 +303,8 @@ class PixxioAssetSource implements AssetSourceInterface
                 $account->getAccountIdentifier(),
                 $this->apiEndpointUri,
                 $this->apiKey,
-                $this->apiClientOptions
+                $this->apiClientOptions,
+                $this->imageOptions
             );
 
             $this->pixxioClient->authenticate($clientSecret->getRefreshToken());

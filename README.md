@@ -133,7 +133,8 @@ Neos:
   Media:
     assetSources:
       'flownative-pixxio':
-        assetSourceOptions
+        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
+        assetSourceOptions:
           imageOptions:
             thumbnailUri:
               width: 400

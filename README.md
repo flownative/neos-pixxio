@@ -129,22 +129,24 @@ Via configuration, you can set what dimensions the returned images must have. Th
 The configuration is by default
 
 ```yaml
-Media:
-  assetSources:
-    'flownative-pixxio':
-      imageOptions:
-        thumbnailUri:
-          width: 400
-          height: 400
-          quality: 90
-          crop: false
-        previewUri:
-          width: 1500
-          height: 1500
-          quality: 90
-        originalUri:
-          sizeMax: 1920
-          quality: 90
+Neos:
+  Media:
+    assetSources:
+      'flownative-pixxio':
+        assetSourceOptions
+          imageOptions:
+            thumbnailUri:
+              width: 400
+              height: 400
+              quality: 90
+              crop: false
+            previewUri:
+              width: 1500
+              height: 1500
+              quality: 90
+            originalUri:
+              sizeMax: 1920
+              quality: 90
 ```
 
 Each imageOptions can be overridden from your own packages configuration, by addressing the specific preset key.

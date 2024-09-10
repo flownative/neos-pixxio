@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Flownative\Pixxio\Service;
 
@@ -31,32 +32,32 @@ final class PixxioClient
     /**
      * @var Client
      */
-    private $guzzleClient;
+    private Client $guzzleClient;
 
     /**
      * @var string
      */
-    private $apiEndpointUri;
+    private string $apiEndpointUri;
 
     /**
      * @var string
      */
-    private $apiKey;
+    private string $apiKey;
 
     /**
      * @var array
      */
-    private $apiClientOptions;
+    private array $apiClientOptions;
 
     /**
-     * @var string
+     * @var string|null
      */
-    private $accessToken;
+    private ?string $accessToken;
 
     /**
      * @var array
      */
-    private $imageOptions;
+    private array $imageOptions;
 
     /**
      * @var array

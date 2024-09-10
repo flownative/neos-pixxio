@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Flownative\Pixxio\AssetSource;
 
@@ -31,97 +32,56 @@ use Neos\Utility\MediaTypes;
 class PixxioAssetSource implements AssetSourceInterface
 {
     /**
-     * @var string
-     */
-    private $assetSourceIdentifier;
-
-    /**
-     * @var PixxioAssetProxyRepository
-     */
-    private $assetProxyRepository;
-
-    /**
      * @Flow\Inject
      * @var PixxioServiceFactory
      */
-    protected $pixxioServiceFactory;
+    protected PixxioServiceFactory $pixxioServiceFactory;
 
     /**
      * @Flow\Inject
      * @var ClientSecretRepository
      */
-    protected $clientSecretRepository;
+    protected ClientSecretRepository $clientSecretRepository;
 
     /**
      * @Flow\Inject
      * @var Context
      */
-    protected $securityContext;
+    protected Context $securityContext;
 
     /**
      * @Flow\Inject
      * @var ResourceManager
      */
-    protected $resourceManager;
+    protected ResourceManager $resourceManager;
+
+    private string $assetSourceIdentifier;
+
+    private ?PixxioAssetProxyRepository $assetProxyRepository = null;
+
+    private string $apiEndpointUri;
+
+    private string $apiKey;
+
+    private array $apiClientOptions = [];
+
+    private array $imageOptions = [];
+
+    private string $sharedRefreshToken;
+
+    private ?PixxioClient $pixxioClient = null;
+
+    private bool $autoTaggingEnable = false;
+
+    private string $autoTaggingInUseTag = 'used-by-neos';
+
+    private array $assetSourceOptions;
+
+    protected string $iconPath;
+
+    protected string $description;
 
     /**
-     * @var string
-     */
-    private $apiEndpointUri;
-
-    /**
-     * @var string
-     */
-    private $apiKey;
-
-    /**
-     * @var array
-     */
-    private $apiClientOptions = [];
-
-    /**
-     * @var array
-     */
-    private $imageOptions = [];
-
-    /**
-     * @var string
-     */
-    private $sharedRefreshToken;
-
-    /**
-     * @var PixxioClient
-     */
-    private $pixxioClient;
-
-    /**
-     * @var bool
-     */
-    private $autoTaggingEnable = false;
-
-    /**
-     * @var string
-     */
-    private $autoTaggingInUseTag = 'used-by-neos';
-
-    /**
-     * @var array
-     */
-    private $assetSourceOptions;
-
-    /**
-     * @var string
-     */
-    protected $iconPath;
-
-    /**
-     * @var string
-     */
-    protected $description = '';
-
-    /**
-     * @param string $assetSourceIdentifier
-     * @param array $assetSourceOptions
      */
     public function __construct(string $assetSourceIdentifier, array $assetSourceOptions)
     {
@@ -201,35 +161,21 @@ class PixxioAssetSource implements AssetSourceInterface
         }
     }
 
-    /**
-     * @param string $assetSourceIdentifier
-     * @param array $assetSourceOptions
-     * @return AssetSourceInterface
-     */
     public static function createFromConfiguration(string $assetSourceIdentifier, array $assetSourceOptions): AssetSourceInterface
     {
         return new static($assetSourceIdentifier, $assetSourceOptions);
     }
 
-    /**
-     * @return string
-     */
     public function getIdentifier(): string
     {
         return $this->assetSourceIdentifier;
     }
 
-    /**
-     * @return string
-     */
     public function getLabel(): string
     {
         return 'pixx.io';
     }
 
-    /**
-     * @return AssetProxyRepositoryInterface
-     */
     public function getAssetProxyRepository(): AssetProxyRepositoryInterface
     {
         if ($this->assetProxyRepository === null) {
@@ -239,40 +185,27 @@ class PixxioAssetSource implements AssetSourceInterface
         return $this->assetProxyRepository;
     }
 
-    /**
-     * @return bool
-     */
     public function isReadOnly(): bool
     {
         return true;
     }
 
-    /**
-     * @return array
-     */
     public function getAssetSourceOptions(): array
     {
         return $this->assetSourceOptions;
     }
 
-    /**
-     * @return bool
-     */
     public function isAutoTaggingEnabled(): bool
     {
         return $this->autoTaggingEnable;
     }
 
-    /**
-     * @return string
-     */
     public function getAutoTaggingInUseTag(): string
     {
         return $this->autoTaggingInUseTag;
     }
 
     /**
-     * @return PixxioClient
      * @throws MissingClientSecretException
      * @throws AuthenticationFailedException
      */
@@ -320,6 +253,4 @@ class PixxioAssetSource implements AssetSourceInterface
     {
         return $this->description;
     }
-
-
 }

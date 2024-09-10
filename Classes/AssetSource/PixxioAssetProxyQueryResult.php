@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Flownative\Pixxio\AssetSource;
 
@@ -23,37 +24,19 @@ use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
  */
 class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
 {
-    /**
-     * @var PixxioAssetProxyQuery
-     */
-    private $query;
+    private PixxioAssetProxyQuery $query;
 
-    /**
-     * @var array
-     */
-    private $assetProxies;
+    private ?array $assetProxies = null;
 
-    /**
-     * @var int
-     */
-    private $numberOfAssetProxies;
+    private ?int $numberOfAssetProxies = null;
 
-    /**
-     * @var \ArrayIterator
-     */
-    private $assetProxiesIterator;
+    private \ArrayIterator $assetProxiesIterator;
 
-    /**
-     * @param PixxioAssetProxyQuery $query
-     */
     public function __construct(PixxioAssetProxyQuery $query)
     {
         $this->query = $query;
     }
 
-    /**
-     * @return void
-     */
     private function initialize(): void
     {
         if ($this->assetProxies === null) {
@@ -62,17 +45,11 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
         }
     }
 
-    /**
-     * @return AssetProxyQueryInterface
-     */
     public function getQuery(): AssetProxyQueryInterface
     {
         return clone $this->query;
     }
 
-    /**
-     * @return AssetProxyInterface|null
-     */
     public function getFirst(): ?AssetProxyInterface
     {
         $this->initialize();
@@ -94,7 +71,7 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
         return $this->assetProxiesIterator->current();
     }
 
-    public function next()
+    public function next(): void
     {
         $this->initialize();
         $this->assetProxiesIterator->next();
@@ -106,19 +83,19 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
         return $this->assetProxiesIterator->key();
     }
 
-    public function valid()
+    public function valid(): bool
     {
         $this->initialize();
         return $this->assetProxiesIterator->valid();
     }
 
-    public function rewind()
+    public function rewind(): void
     {
         $this->initialize();
         $this->assetProxiesIterator->rewind();
     }
 
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         $this->initialize();
         return $this->assetProxiesIterator->offsetExists($offset);
@@ -130,7 +107,7 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
         return $this->assetProxiesIterator->offsetGet($offset);
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         $this->initialize();
         $this->assetProxiesIterator->offsetSet($offset, $value);
@@ -140,10 +117,6 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
     {
     }
 
-    /**
-     * @return int
-     * @throws ConnectionException
-     */
     public function count(): int
     {
         if ($this->numberOfAssetProxies === null) {

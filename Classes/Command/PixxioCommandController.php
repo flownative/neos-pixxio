@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Flownative\Pixxio\Command;
 
 use Flownative\Pixxio\AssetSource\PixxioAssetProxy;
@@ -48,15 +50,13 @@ class PixxioCommandController extends CommandController
 
     /**
      * @Flow\InjectConfiguration(path="mapping", package="Flownative.Pixxio")
-     * @var array
      */
-    protected $mapping = [];
+    protected array $mapping = [];
 
     /**
      * @Flow\InjectConfiguration(path="assetSources", package="Neos.Media")
-     * @var array
      */
-    protected $assetSourcesConfiguration;
+    protected array $assetSourcesConfiguration = [];
 
     /**
      * Tag used assets
@@ -64,7 +64,6 @@ class PixxioCommandController extends CommandController
      * @param string $assetSource Name of the pixxio asset source
      * @param bool $quiet If set, only errors will be displayed.
      * @return void
-     * @throws
      */
     public function tagUsedAssetsCommand(string $assetSource = 'flownative-pixxio', bool $quiet = false): void
     {

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Flownative\Pixxio\Controller;
 
@@ -34,9 +35,8 @@ class PixxioController extends AbstractModuleController
 
     /**
      * @Flow\InjectConfiguration(path="assetSources", package="Neos.Media")
-     * @var array
      */
-    protected $assetSourcesConfiguration;
+    protected array $assetSourcesConfiguration = [];
 
     /**
      * @Flow\Inject
@@ -44,10 +44,7 @@ class PixxioController extends AbstractModuleController
      */
     protected $clientSecretRepository;
 
-    /**
-     * @return void
-     */
-    public function indexAction()
+    public function indexAction(): void
     {
         $this->view->assign('apiEndpointUri', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']['apiEndpointUri']);
         $this->view->assign('sharedRefreshToken', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']['sharedRefreshToken'] ?? null);
@@ -69,11 +66,10 @@ class PixxioController extends AbstractModuleController
     }
 
     /**
-     * @param ?string|null $refreshToken
      * @throws IllegalObjectTypeException
      * @throws UnsupportedRequestTypeException
      */
-    public function updateRefreshTokenAction(string $refreshToken = null)
+    public function updateRefreshTokenAction(string $refreshToken = null): void
     {
         $account = $this->securityContext->getAccount();
         $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Flownative\Pixxio\Domain\Repository;
 
@@ -22,10 +23,6 @@ use Neos\Flow\Persistence\Repository;
  */
 class ClientSecretRepository extends Repository
 {
-    /**
-     * @param string $accountIdentifier
-     * @return ClientSecret|null
-     */
     public function findOneByFlowAccountIdentifier(string $accountIdentifier): ?ClientSecret
     {
         return $this->__call('findOneByFlowAccountIdentifier', [$accountIdentifier]);

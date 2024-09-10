@@ -300,7 +300,6 @@ class PixxioAssetSource implements AssetSourceInterface
             }
 
             $this->pixxioClient = $this->pixxioServiceFactory->createForAccount(
-                $account->getAccountIdentifier(),
                 $this->apiEndpointUri,
                 $this->apiKey,
                 $this->apiClientOptions,

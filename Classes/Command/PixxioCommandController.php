@@ -59,6 +59,30 @@ class PixxioCommandController extends CommandController
     protected array $assetSourcesConfiguration = [];
 
     /**
+     * List all configured (pixx.io) asset sources
+     *
+     * @param bool $showAll If true, all types of asset sources will be shown
+     * @return void
+     */
+    public function listCommand(bool $showAll = false): void
+    {
+        $assetSourcesData = [];
+
+        foreach ($this->assetSourceService->getAssetSources() as $assetSource) {
+            if ($showAll || $assetSource instanceof PixxioAssetSource) {
+                $assetSourcesData[] = [
+                    $assetSource->getIdentifier(),
+                    $assetSource->getLabel(),
+                    get_class($assetSource),
+                    $assetSource->getDescription()
+                ];
+            }
+        }
+
+        $this->output->outputTable($assetSourcesData, ['Identifier', 'Label', 'Type', 'Description']);
+    }
+
+    /**
      * Tag used assets
      *
      * @param string $assetSource Name of the pixx.io asset source

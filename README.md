@@ -209,9 +209,11 @@ command. It's important to run the `removeunused`-command *after* the tagging co
 images will not be untagged in the pixx.io media library.
 
 ---
+
 **NOTE**  
 At this point, the auto-tagging feature is not really optimized for performance. The command merely
 iterates over all assets which were imported from pixx.io and checks if tags need to be updated.
+
 ---
 
 ### Category mapping from pixx.io to Neos

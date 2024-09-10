@@ -4,8 +4,9 @@
     "name": "flownative/neos-pixxio",
     "license": "MIT",
     "require": {
-        "neos/flow": "^6.3 || ^7.0 || ^8.0 || dev-master",
-        "neos/media": "^5.3 || ^7.0 || ^8.0 || dev-master",
+        "php": "^8.0",
+        "neos/flow": "^7.3 || ^8.0",
+        "neos/media": "^7.3 || ^8.0",
         "guzzlehttp/guzzle": "^6.0 || ^7.0",
         "behat/transliterator": "~1.0"
     },

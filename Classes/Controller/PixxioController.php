@@ -64,7 +64,7 @@ class PixxioController extends AbstractModuleController
                 $assetSourceData['refreshToken'] = $clientSecret->getRefreshToken();
             }
             try {
-                $assetSource = new PixxioAssetSource($assetSourceIdentifier, $assetSourceConfiguration['assetSourceOptions']);
+                $assetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
                 $assetSource->getPixxioClient();
                 $assetSourceData['connectionSucceeded'] = true;
             } catch (MissingClientSecretException|AuthenticationFailedException $exception) {

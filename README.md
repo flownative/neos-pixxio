@@ -39,34 +39,21 @@ The API access is configured by three components:
 
 1. a setting which contains the customer-specific service endpoint URL
 2. a setting providing the pixx.io API key
-3. a setting providing the pixx.io user refresh token
+3. a setting providing a shared pixx.io user refresh token
 
 **To get the needed values for API endpoint and API key, please contact your pixx.io support contact.**
 
-First define the customer-specific service endpoint by adding the URL to your settings:
+Using those values configure an asset source by adding this to your settings:
 
 ```yaml
 Neos:
   Media:
     assetSources:
-      'flownative-pixxio':
+      # an identifier for your asset source, up to you
+      'acme-pixxio':
         assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
         assetSourceOptions:
-          apiEndpointUri: 'https://flownative.pixxio.media/cgi-bin/api/pixxio-api.pl'
-```
-
-You will likely just replace "flownative" by our own subdomain.
-
-Next, add the pixx.io API key and the refresh token of the pixx.io user you want to connect with Neos:
-
-```yaml
-Neos:
-  Media:
-    assetSources:
-      'flownative-pixxio':
-        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
-        assetSourceOptions:
-          apiEndpointUri: 'https://flownative.pixxio.media/cgi-bin/api/pixxio-api.pl'
+          apiEndpointUri: 'https://acme.pixxio.media/cgi-bin/api/pixxio-api.pl'
           apiKey: 'abcdef123456789'
           sharedRefreshToken: 'A3ZezMq6Q24X314xbaiq5ewNE5q4Gt'
 ```
@@ -82,6 +69,24 @@ message with further details).
 
 ## Additional configuration options
 
+Defaults for the described settings can be found (and adjusted) in `Flownative.Pixxio.defaults.assetSourceOptions`.
+
+### Label & description
+
+You can configure a custom label and description for the asset source like this:
+
+```yaml
+Neos:
+  Media:
+    assetSources:
+      'acme-pixxio':
+        assetSourceOptions:
+          label: 'ACME assets'
+          description: 'Our custom pixx.io assets source'
+```
+
+### Additional configuration for specific media types
+
 During import, Neos tries to use a medium-sized version of the original instead of the high resolution file uploaded to
 pixx.io. This greatly improves import speed and produces good results in most cases. Furthermore, this way some formats,
 like Adobe Photoshop, can be used seamlessly in Neos without the need to prior converting them into a web-compatible image
@@ -94,8 +99,7 @@ SVG or PDF are imported this way. You can add more types through the similar ent
 Neos:
   Media:
     assetSources:
-      'flownative-pixxio':
-        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
+      'acme-pixxio':
         assetSourceOptions:
           mediaTypes:
             'image/svg+xml':
@@ -104,16 +108,16 @@ Neos:
               usePixxioThumbnailAsOriginal: true
 ```
 
-Sometimes the API Client needs additional configuration for the tls connection
-like custom timeouts or certificates.
+### Custom API client options
+
+Sometimes the API Client needs additional configuration for the tls connection like custom timeouts or certificates.
 See: http://docs.guzzlephp.org/en/6.5/request-options.html
 
 ```yaml
 Neos:
   Media:
     assetSources:
-      'flownative-pixxio':
-        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
+      'acme-pixxio':
         assetSourceOptions:
           apiClientOptions:
             'verify': '/path/to/cert.pem'
@@ -126,34 +130,23 @@ Via configuration, you can set what dimensions the returned images must have. Th
  * `previewUri` used in the detail page of a asset
  * `originalUri` used for downloading the asset
 
-The configuration is by default
+Each can be overridden from your own configuration, by addressing the specific preset key.
+
+By default, the assets from Pixx.io is returned in a cropped format. When this is the case,
+a editor can't see if a asset is horizontal or vertical, when looking in the Media Browser list.
+By setting `crop: false` the image will be returned in a not-cropped version, and it's visible
+for the editor, to see the assets orientation.
 
 ```yaml
 Neos:
   Media:
     assetSources:
-      'flownative-pixxio':
-        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
+      'acme-pixxio':
         assetSourceOptions:
           imageOptions:
             thumbnailUri:
-              width: 400
-              height: 400
-              quality: 90
               crop: false
-            previewUri:
-              width: 1500
-              height: 1500
-              quality: 90
-            originalUri:
-              sizeMax: 1920
-              quality: 90
 ```
-
-Each imageOptions can be overridden from your own packages configuration, by addressing the specific preset key.
-
-By default, the assets from Pixx.io is returned in a cropped format. When this is the case, a editor can't see if a asset is horizontal or vertical, when looking in the Media Browser list.
-By setting `crop: false` the image will be returned in a not-cropped version, and it's visible for the editor, to see the assets orientation
 
 ## Cleaning up unused assets
 
@@ -165,14 +158,14 @@ storage. While this does not happen automatically, it can be easily automated by
 In order to clean up unused assets, simply run the following command as often as you like:
 
 ```bash
-./flow media:removeunused --asset-source flownative-pixxio
+./flow media:removeunused --asset-source acme-pixxio
 ```
 
 If you'd rather like to invoke this command through a cron-job, you can add two additional flags which make this
 command non-interactive:
 
 ```bash
-./flow media:removeunused --quiet --assume-yes --asset-source flownative-pixxio
+./flow media:removeunused --quiet --assume-yes --asset-source acme-pixxio
 ```
 
 ## Auto-Tagging
@@ -188,12 +181,12 @@ Auto-tagging is configured as follows:
 Neos:
   Media:
     assetSources:
-      'flownative-pixxio':
-        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
+      'acme-pixxio':
         assetSourceOptions:
           autoTagging:
             enable: true
-            inUseTag: 'your-custom-tag'
+            # optional, used-by-neos is the default tag
+            inUseTag: 'used-by-neos'
 ```
 
 Since Neos currently cannot handle auto-tagging reliably during runtime, the job must be done through a
@@ -201,9 +194,9 @@ command line command. Simply run the following command for tagging new assets an
 assets which are not in use anymore:
 
 ```
-./flow pixxio:tagusedassets
+./flow pixxio:tagusedassets --asset-source acme-pixxio
 
-Tagging used assets of asset source "flownative-pixxio" via Pixxio API:
+Tagging used assets of asset source "acme-pixxio" via Pixxio API:
   (tagged)  dana-devolk-1348553-unsplash 358 (1)
    tagged   azamat-zhanisov-1348039-unsplash 354 (1)
   (tagged)  tim-foster-1345174-unsplash 373 (1)
@@ -227,48 +220,38 @@ pixx.io offers categories to organize assets in a folder-like structure. Those
 can be mapped to asset collections and tags in Neos, to make them visible for
 the  users.
 
----
-**NOTE**  
-The pixx.io asset source declares itself read-only. Neos does not show asset
-collections in the UI for read-only asset sources. This has been changed for
-Neos 7.3.0 and up with https://github.com/neos/neos-development-collection/pull/3481
-
- If you want to use this feature with older Neos versions, you can use the PR with
- [cweagans/composer-patches](https://github.com/cweagans/composer-patches#readme)
- or copy the adjusted template into your project and use `Views.yaml` to activate it.
----
-
 The configuration for the category import looks like this:
 
 ```yaml
-Flownative:
-  Pixxio:
-    mapping:
-      # map "categories" from pixx.io to Neos
-      categoriesMaximumDepth: 2         # only include the first two levels of categories
-      categories:
-        'People/Employees':
-          asAssetCollection: false      # ignore this category, put more specific patterns first
-        'People*':                      # the category "path" in pixx.io, shell-style globbing is supported
-          asAssetCollection: true       # map to an asset collection named after the category
+Neos:
+  Media:
+    assetSources:
+      'acme-pixxio':
+        assetSourceOptions:
+          mapping:
+            # map "categories" from pixx.io to Neos
+            categoriesMaximumDepth: 2         # only include the first two levels of categories (10 is default)
+            categories:
+              'People/Employees':
+                asAssetCollection: false      # ignore this category, put more specific patterns first
+              'People*':                      # the category "path" in pixx.io, shell-style globbing is supported
+                asAssetCollection: true       # map to an asset collection named after the category
 ```
 
-- The key used is the category identifier from pixx.io as used in the API,
-  without leading slash
-- `asAssetCollection` set to `true` exposes the category as an asset
-  collection named like the category.
+- The key used is the category identifier from pixx.io as used in the API, without leading slash
+- `asAssetCollection` set to `true` exposes the category as an asset collection named like the category.
 
 Afterwards, run the following command to update the asset collections, ideally
 in a cronjob to keep things up-to-date:
 
 ```bash
-./flow pixxio:importcategoriesascollections
+./flow pixxio:importcategoriesascollections --asset-source acme-pixxio
 ```
 
 To check what a given category would import, you can use a verbose dry-run:
 
 ```bash
-$ ./flow pixxio:importcategoriesascollections --quiet 0 --dry-run 1
+$ ./flow pixxio:importcategoriesascollections --asset-source acme-pixxio --quiet 0 --dry-run 1
 Importing categories as asset collections via pixx.io API
 o Dokumentation
 = Kunde A

@@ -1,9 +1,55 @@
 Flownative:
   Pixxio:
-    mapping:
-      # map "categories" from pixx.io to Neos
-      categoriesMaximumDepth: 10
-      categories: []
+    defaults:
+      assetSourceOptions:
+        # The icon for the asset source
+        icon: 'resource://Flownative.Pixxio/Public/Icons/PixxioWhite.svg'
+
+        # The label for the asset source
+        label: 'pixx.io assets'
+
+        # A description for the asset source, optional
+        description: ''
+
+        # Additional configuration for specific media types
+        mediaTypes:
+          'image/svg+xml':
+            usePixxioThumbnailAsOriginal: true
+          'application/pdf':
+            usePixxioThumbnailAsOriginal: true
+
+        # This plugin can automatically tag files in the pixxio media library
+        # when they are in use, and remove the tag once they are not used anymore
+        autoTagging:
+          enable: false
+          inUseTag: 'used-by-neos'
+
+        # map "categories" from pixx.io to Neos
+        mapping:
+          categoriesMaximumDepth: 10
+          categories: []
+
+        # Image options, are the formats returned for use in the asset properties "thumbnailUri", "previewUri" and "originalUri"
+        # imageOptions parameter are described here: https://tutorial.pixxio.cloud/cgi-bin/api/pixxio-api.pl/documentation/generalInformation/imageOptions
+        # Setting the "crop" parameter, removes the "height" attribute, and creates a non-cropped version
+        imageOptions:
+          thumbnailUri:
+            width: 400
+            height: 400
+            quality: 90
+            crop: false
+          previewUri:
+            width: 1500
+            height: 1500
+            quality: 90
+          originalUri:
+            sizeMax: 1920
+            quality: 90
+
+        # Options for the Guzzle HTTP Client as specified here
+        # see http://docs.guzzlephp.org/en/6.5/request-options.html
+        # Use this to configure custom certificates or to disable cert verification
+        apiClientOptions: {}
 
 Neos:
   Flow:
@@ -11,65 +57,6 @@ Neos:
       routes:
         'Flownative.Pixxio':
           position: 'after Neos.Neos'
-
-  Media:
-    assetSources:
-      'flownative-pixxio':
-        assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
-        assetSourceOptions:
-
-          # The customer-specific endpoint URI pointing to the Pixx.io API:
-          # Example: 'https://flownative.pixxio.media/cgi-bin/api/pixxio-api.pl'
-          apiEndpointUri: ''
-
-          # The API key of this Pixx.io integration.
-          # Please get in touch with Pixx.io support in order to get this key.
-          apiKey: ''
-
-          # Options for the Guzzle HTTP Client as specified here
-          # see http://docs.guzzlephp.org/en/6.5/request-options.html
-          # Use this to configure custom certificates or to disable cert verification
-          apiClientOptions: {}
-
-          # A pixx.io user refresh token which is shared across all editors in
-          # this Neos installation.
-          # sharedRefreshToken: ''
-
-          # Additional configuration for specific media types
-          mediaTypes:
-            'image/svg+xml':
-              usePixxioThumbnailAsOriginal: true
-            'application/pdf':
-              usePixxioThumbnailAsOriginal: true
-
-          # This plugin can automatically tag files in the pixxio media library
-          # when they are in use, and remove the tag once they are not used anymore
-          autoTagging:
-            enable: false
-            inUseTag: 'used-by-neos'
-
-          # Image options, are the formats returned for use in the asset properties "thumbnailUri", "previewUri" and "originalUri"
-          # imageOptions parameter are described here: https://tutorial.pixxio.cloud/cgi-bin/api/pixxio-api.pl/documentation/generalInformation/imageOptions
-          # Setting the "crop" parameter, removes the "height" attribute, and creates a non-cropped version
-          imageOptions:
-            thumbnailUri:
-              width: 400
-              height: 400
-              quality: 90
-              crop: false
-            previewUri:
-              width: 1500
-              height: 1500
-              quality: 90
-            originalUri:
-              sizeMax: 1920
-              quality: 90
-
-          # The icon for the asset source
-          icon: 'resource://Flownative.Pixxio/Public/Icons/PixxioWhite.svg'
-
-          # The description for the asset source
-          description: 'Pixxio assets'
 
   Neos:
     modules:

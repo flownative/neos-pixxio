@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Flownative\Pixxio\Domain\Model;
 
@@ -15,7 +16,6 @@ namespace Flownative\Pixxio\Domain\Model;
 
 use Doctrine\ORM\Mapping as ORM;
 use Neos\Flow\Annotations\Entity;
-use Neos\Flow\Annotations\Identity;
 
 /**
  * @Entity()
@@ -23,67 +23,63 @@ use Neos\Flow\Annotations\Identity;
 class ClientSecret
 {
     /**
-     * @Identity()
      * @var string
      */
-    protected $flowAccountIdentifier;
+    protected string $flowAccountIdentifier;
+
+    /**
+     * @var string
+     */
+    protected string $assetSourceIdentifier;
 
     /**
      * @ORM\Column(type="text")
      * @var string
      */
-    protected $refreshToken;
+    protected string $refreshToken;
 
     /**
      * @ORM\Column(nullable=true, type="text")
-     * @var string
+     * @var string|null
      */
-    protected $accessToken;
+    protected ?string $accessToken;
 
-    /**
-     * @return string
-     */
     public function getFlowAccountIdentifier(): string
     {
         return $this->flowAccountIdentifier;
     }
 
-    /**
-     * @param string $flowAccountIdentifier
-     */
     public function setFlowAccountIdentifier(string $flowAccountIdentifier): void
     {
         $this->flowAccountIdentifier = $flowAccountIdentifier;
     }
 
-    /**
-     * @return string
-     */
+    public function getAssetSourceIdentifier(): string
+    {
+        return $this->assetSourceIdentifier;
+    }
+
+    public function setAssetSourceIdentifier(string $assetSourceIdentifier): void
+    {
+        $this->assetSourceIdentifier = $assetSourceIdentifier;
+    }
+
     public function getRefreshToken(): string
     {
         return $this->refreshToken;
     }
 
-    /**
-     * @param string $refreshToken
-     */
     public function setRefreshToken(string $refreshToken): void
     {
         $this->refreshToken = $refreshToken;
     }
 
-    /**
-     * @return string
-     */
     public function getAccessToken(): ?string
     {
         return $this->accessToken;
     }
 
-    /**
-     * @param string|null $accessToken
-     */
-    public function setAccessToken($accessToken): void
+    public function setAccessToken(?string $accessToken): void
     {
         $this->accessToken = $accessToken;
     }

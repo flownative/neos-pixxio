@@ -19,7 +19,6 @@ use Flownative\Pixxio\Domain\Repository\ClientSecretRepository;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use Neos\Flow\Annotations as Flow;
-use Neos\Flow\Mvc\Exception\StopActionException;
 use Neos\Flow\Mvc\Exception\UnsupportedRequestTypeException;
 use Neos\Flow\Persistence\Exception\IllegalObjectTypeException;
 use Neos\Flow\Security\Context;
@@ -70,10 +69,9 @@ class PixxioController extends AbstractModuleController
     }
 
     /**
-     * @param string $refreshToken
-     * @throws StopActionException
-     * @throws UnsupportedRequestTypeException
+     * @param ?string|null $refreshToken
      * @throws IllegalObjectTypeException
+     * @throws UnsupportedRequestTypeException
      */
     public function updateRefreshTokenAction(string $refreshToken = null)
     {

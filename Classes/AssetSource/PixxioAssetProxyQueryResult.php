@@ -13,6 +13,7 @@ namespace Flownative\Pixxio\AssetSource;
  * source code.
  */
 
+use Flownative\Pixxio\Exception\ConnectionException;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
@@ -141,7 +142,7 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
 
     /**
      * @return int
-     * @throws \Flownative\Pixxio\Exception\ConnectionException
+     * @throws ConnectionException
      */
     public function count(): int
     {

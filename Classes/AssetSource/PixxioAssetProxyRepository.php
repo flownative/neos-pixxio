@@ -19,6 +19,7 @@ use Flownative\Pixxio\Exception\AssetNotFoundException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
+use GuzzleHttp\Utils;
 use Neos\Cache\Frontend\StringFrontend;
 use Neos\Flow\ObjectManagement\DependencyInjection\DependencyProxy;
 use Neos\Media\Domain\Model\AssetCollection;
@@ -90,10 +91,10 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         $cacheEntry = $this->assetProxyCache->get($cacheEntryIdentifier);
 
         if ($cacheEntry) {
-            $responseObject = \GuzzleHttp\json_decode($cacheEntry);
+            $responseObject = Utils::jsonDecode($cacheEntry);
         } else {
             $response = $client->getFile($identifier);
-            $responseObject = \GuzzleHttp\json_decode($response->getBody());
+            $responseObject = Utils::jsonDecode($response->getBody()->getContents());
 
             if (!$responseObject instanceof \stdClass) {
                 throw new AssetNotFoundException('Asset not found', 1526636260);
@@ -102,19 +103,18 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
                 switch ($responseObject->status) {
                     case 403:
                         throw new AccessToAssetDeniedException(sprintf('Failed retrieving asset: %s', $response->help ?? '-') , 1589815740);
-                    break;
                     default:
                         throw new AssetNotFoundException(sprintf('Failed retrieving asset, unexpected API response: %s', $response->help ?? '-') , 1589354288);
                 }
             }
 
-            $this->assetProxyCache->set($cacheEntryIdentifier, \GuzzleHttp\json_encode($responseObject, JSON_FORCE_OBJECT));
+            $this->assetProxyCache->set($cacheEntryIdentifier, Utils::jsonEncode($responseObject, JSON_FORCE_OBJECT));
         }
         return PixxioAssetProxy::fromJsonObject($responseObject, $this->assetSource);
     }
 
     /**
-     * @param AssetTypeFilter $assetType
+     * @param AssetTypeFilter|null $assetType
      */
     public function filterByType(AssetTypeFilter $assetType = null): void
     {
@@ -123,7 +123,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
 
     public function filterByCollection(AssetCollection $assetCollection = null): void
     {
-        $this->assetCollectionFilter = $assetCollection ? $assetCollection->getTitle() : null;
+        $this->assetCollectionFilter = $assetCollection?->getTitle();
     }
 
     /**
@@ -183,8 +183,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
      */
     public function countAll(): int
     {
-        $query = new PixxioAssetProxyQuery($this->assetSource);
-        return $query->count();
+        return (new PixxioAssetProxyQuery($this->assetSource))->count();
     }
 
     /**

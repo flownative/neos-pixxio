@@ -17,6 +17,7 @@ use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Utils;
 use Neos\Flow\Annotations\Inject;
 use Neos\Flow\Log\ThrowableStorageInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
@@ -216,7 +217,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
     {
         try {
             $response = $this->sendSearchRequest(1, []);
-            $responseObject = \GuzzleHttp\json_decode($response->getBody());
+            $responseObject = Utils::jsonDecode($response->getBody()->getContents());
 
             if (!isset($responseObject->quantity)) {
                 if (isset($responseObject->help)) {
@@ -225,7 +226,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
                 }
                 return 0;
             }
-            return $responseObject->quantity;
+            return (int)$responseObject->quantity;
         } catch (AuthenticationFailedException $exception) {
             $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1526629541, $exception));
             $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
@@ -250,7 +251,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
         try {
             $assetProxies = [];
             $response = $this->sendSearchRequest($this->limit, $this->orderings);
-            $responseObject = \GuzzleHttp\json_decode($response->getBody());
+            $responseObject = Utils::jsonDecode($response->getBody()->getContents());
 
             if (!isset($responseObject->files)) {
                 return [];

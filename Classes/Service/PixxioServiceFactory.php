@@ -48,12 +48,11 @@ class PixxioServiceFactory
      */
     public function createForAccount(string $accountIdentifier, string $apiEndpointUri, string $apiKey, array $apiClientOptions, array $imageOptions)
     {
-        $client = new PixxioClient(
+        return new PixxioClient(
             $apiEndpointUri,
             $apiKey,
             $apiClientOptions,
             $imageOptions
         );
-        return $client;
     }
 }

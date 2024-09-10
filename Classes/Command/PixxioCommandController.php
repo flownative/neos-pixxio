@@ -6,10 +6,11 @@ use Flownative\Pixxio\AssetSource\PixxioAssetProxyRepository;
 use Flownative\Pixxio\AssetSource\PixxioAssetSource;
 use Flownative\Pixxio\Exception\AccessToAssetDeniedException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
+use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
+use GuzzleHttp\Utils;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
-use Neos\Flow\Cli\Exception\StopCommandException;
 use Neos\Flow\Persistence\Exception\IllegalObjectTypeException;
 use Neos\Media\Domain\Model\Asset;
 use Neos\Media\Domain\Model\AssetCollection;
@@ -75,11 +76,11 @@ class PixxioCommandController extends CommandController
         try {
             $pixxioAssetSource = new PixxioAssetSource($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
             $pixxioClient = $pixxioAssetSource->getPixxioClient();
-        } catch (MissingClientSecretException $e) {
+        } catch (MissingClientSecretException) {
             $this->outputLine('<error>Authentication error: Missing client secret</error>');
             exit(1);
-        } catch (AuthenticationFailedException $e) {
-            $this->outputLine('<error>Authentication error: %s</error>', [$e->getMessage()]);
+        } catch (AuthenticationFailedException $exception) {
+            $this->outputLine('<error>Authentication error: %s</error>', [$exception->getMessage()]);
             exit(1);
         }
 
@@ -148,6 +149,7 @@ class PixxioCommandController extends CommandController
      *
      * @param string $assetSource
      * @param bool $quiet
+     * @throws IllegalObjectTypeException
      */
     public function updateMetadataCommand(string $assetSource = 'flownative-pixxio', bool $quiet = false): void
     {
@@ -233,7 +235,7 @@ class PixxioCommandController extends CommandController
      * @param bool $dryRun If set, no changes will be made.
      * @return void
      * @throws IllegalObjectTypeException
-     * @throws \Flownative\Pixxio\Exception\ConnectionException
+     * @throws ConnectionException
      */
     public function importCategoriesAsCollectionsCommand(string $assetSourceIdentifier = 'flownative-pixxio', bool $quiet = true, bool $dryRun = false): void
     {
@@ -242,26 +244,26 @@ class PixxioCommandController extends CommandController
         try {
             $pixxioAssetSource = new PixxioAssetSource($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
             $cantoClient = $pixxioAssetSource->getPixxioClient();
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $this->outputLine('<error>pixx.io client could not be created</error>');
             $this->quit(1);
         }
 
         $response = $cantoClient->getCategories();
-        $responseObject = \GuzzleHttp\json_decode($response->getBody());
+        $responseObject = Utils::jsonDecode($response->getBody()->getContents());
         foreach ($responseObject->categories as $categoryPath) {
             $categoryPath = ltrim($categoryPath, '/');
             if ($this->shouldBeImportedAsAssetCollection($categoryPath)) {
                 $assetCollection = $this->assetCollectionRepository->findOneByTitle($categoryPath);
 
-                if (!($assetCollection instanceof AssetCollection)) {
+                if ($assetCollection instanceof AssetCollection) {
+                    !$quiet && $this->outputLine('= %s', [$categoryPath]);
+                } else {
                     if (!$dryRun) {
                         $assetCollection = new AssetCollection($categoryPath);
                         $this->assetCollectionRepository->add($assetCollection);
                     }
                     !$quiet && $this->outputLine('+ %s', [$categoryPath]);
-                } else {
-                    !$quiet && $this->outputLine('= %s', [$categoryPath]);
                 }
             } else {
                 !$quiet && $this->outputLine('o %s', [$categoryPath]);

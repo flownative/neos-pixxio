@@ -36,7 +36,7 @@ class ClientSecret
 
     /**
      * @ORM\Column(nullable=true, type="text")
-     * @var string
+     * @var string|null
      */
     protected $accessToken;
 
@@ -73,7 +73,7 @@ class ClientSecret
     }
 
     /**
-     * @return string
+     * @return string|null
      */
     public function getAccessToken(): ?string
     {

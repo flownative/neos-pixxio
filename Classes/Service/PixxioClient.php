@@ -19,6 +19,7 @@ use Flownative\Pixxio\Exception\Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Utils;
 use Neos\Media\Domain\Model\AssetSource\SupportsSortingInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -60,7 +61,7 @@ final class PixxioClient
     /**
      * @var array
      */
-    private $fields = [
+    private static array $fields = [
         'id', 'originalFilename', 'fileType', 'keywords', 'createDate', 'imageHeight', 'imageWidth', 'originalPath', 'subject', 'description',
         'modifyDate', 'fileSize', 'modifiedImagePaths', 'imagePath', 'dynamicMetadata'
     ];
@@ -108,9 +109,8 @@ final class PixxioClient
                 continue;
             }
             $imageOption = $imageOptions[$imageOptionPresetKey];
-            if (isset($imageOption['crop']) && $imageOption['crop'] === false && isset($imageOption['height'])) {
-                unset($imageOption['height']);
-                unset($imageOption['crop']);
+            if (isset($imageOption['crop'], $imageOption['height']) && $imageOption['crop'] === false) {
+                unset($imageOption['height'], $imageOption['crop']);
             }
             $this->imageOptions[] = $imageOption;
         }
@@ -133,11 +133,11 @@ final class PixxioClient
                     ]
                 ]
             );
-        } catch (GuzzleException $e) {
-            throw new AuthenticationFailedException('Authentication failed: ' . $e->getMessage(), 1542808119);
+        } catch (GuzzleException $exception) {
+            throw new AuthenticationFailedException('Authentication failed: ' . $exception->getMessage(), 1542808119);
         }
 
-        $result = \GuzzleHttp\json_decode($response->getBody()->getContents());
+        $result = Utils::jsonDecode($response->getBody()->getContents());
         if ($result->success === 'true' && isset($result->accessToken)) {
             $this->accessToken = $result->accessToken;
             return;
@@ -155,19 +155,19 @@ final class PixxioClient
     {
         $options = new \stdClass();
         $options->imageOptions = $this->imageOptions;
-        $options->fields = $this->fields;
+        $options->fields = static::$fields;
 
         $uri = new Uri( $this->apiEndpointUri . '/json/files/' . $id);
         $uri = $uri->withQuery(
             'accessToken=' . $this->accessToken . '&' .
-            'options=' . \GuzzleHttp\json_encode($options)
+            'options=' . Utils::jsonEncode($options)
         );
 
         $client = new Client($this->apiClientOptions);
         try {
             return $client->request('GET', $uri);
-        } catch (GuzzleException $e) {
-            throw new ConnectionException('Retrieving file failed: ' . $e->getMessage(), 1542808207);
+        } catch (GuzzleException $exception) {
+            throw new ConnectionException('Retrieving file failed: ' . $exception->getMessage(), 1542808207);
         }
     }
 
@@ -198,12 +198,12 @@ final class PixxioClient
                 $uri,
                 [
                     'form_params' => [
-                        'options' => \GuzzleHttp\json_encode($options)
+                        'options' => Utils::jsonEncode($options)
                     ]
                 ]
             );
-        } catch (GuzzleException $e) {
-            throw new ConnectionException('Updating file failed: ' . $e->getMessage(), 1587559150);
+        } catch (GuzzleException $exception) {
+            throw new ConnectionException('Updating file failed: ' . $exception->getMessage(), 1587559150);
         }
     }
 
@@ -223,7 +223,7 @@ final class PixxioClient
         $options = new \stdClass();
         $options->pagination = $limit . '-' . (int)($offset / $limit + 1);
         $options->imageOptions = $this->imageOptions;
-        $options->fields = $this->fields;
+        $options->fields = static::$fields;
         $options->formatType = $formatTypes;
         $options->fileType = implode(',', $fileTypes);
 
@@ -248,14 +248,14 @@ final class PixxioClient
         $uri = new Uri( $this->apiEndpointUri . '/json/files');
         $uri = $uri->withQuery(
             'accessToken=' . $this->accessToken . '&' .
-            'options=' . \GuzzleHttp\json_encode($options)
+            'options=' . Utils::jsonEncode($options)
         );
 
         $client = new Client($this->apiClientOptions);
         try {
             return $client->request('GET', $uri);
-        } catch (GuzzleException $e) {
-            throw new ConnectionException('Search failed: ' . $e->getMessage(), 1542808181);
+        } catch (GuzzleException $exception) {
+            throw new ConnectionException('Search failed: ' . $exception->getMessage(), 1542808181);
         }
     }
 
@@ -273,8 +273,8 @@ final class PixxioClient
         $client = new Client($this->apiClientOptions);
         try {
             return $client->request('GET', $uri);
-        } catch (GuzzleException $e) {
-            throw new ConnectionException('Retrieving categories failed: ' . $e->getMessage(), 1642430939);
+        } catch (GuzzleException $exception) {
+            throw new ConnectionException('Retrieving categories failed: ' . $exception->getMessage(), 1642430939);
         }
     }
 

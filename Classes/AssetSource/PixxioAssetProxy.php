@@ -91,12 +91,12 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
     private $originalUri;
 
     /**
-     * @var int
+     * @var int|null
      */
     private $widthInPixels;
 
     /**
-     * @var int
+     * @var int|null
      */
     private $heightInPixels;
 
@@ -120,7 +120,7 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
     public static function fromJsonObject(stdClass $jsonObject, PixxioAssetSource $assetSource): PixxioAssetProxy
     {
         $assetSourceOptions = $assetSource->getAssetSourceOptions();
-        $pixxioOriginalMediaType = MediaTypes::getMediaTypeFromFilename('foo.' . strtolower($jsonObject->fileType));;
+        $pixxioOriginalMediaType = MediaTypes::getMediaTypeFromFilename('foo.' . strtolower($jsonObject->fileType));
         $usePixxioThumbnailAsOriginal = (!isset($assetSourceOptions['mediaTypes'][$pixxioOriginalMediaType]) || $assetSourceOptions['mediaTypes'][$pixxioOriginalMediaType]['usePixxioThumbnailAsOriginal'] === false);
         $modifiedFileType = $usePixxioThumbnailAsOriginal ? 'jpg' : strtolower($jsonObject->fileType);
 
@@ -270,7 +270,7 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
     }
 
     /**
-     * @return UriInterface
+     * @return UriInterface|null
      */
     public function getThumbnailUri(): ?UriInterface
     {
@@ -278,7 +278,7 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
     }
 
     /**
-     * @return UriInterface
+     * @return UriInterface|null
      */
     public function getPreviewUri(): ?UriInterface
     {
@@ -299,13 +299,13 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
             }
 
             return false;
-        } catch (GuzzleException $e) {
-            throw new ConnectionException('Retrieving file failed: ' . $e->getMessage(), 1542808207, $e);
+        } catch (GuzzleException $exception) {
+            throw new ConnectionException('Retrieving file failed: ' . $exception->getMessage(), 1542808207, $exception);
         }
     }
 
     /**
-     * @return string
+     * @return string|null
      */
     public function getLocalAssetIdentifier(): ?string
     {

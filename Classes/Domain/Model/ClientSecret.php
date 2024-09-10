@@ -16,7 +16,6 @@ namespace Flownative\Pixxio\Domain\Model;
 
 use Doctrine\ORM\Mapping as ORM;
 use Neos\Flow\Annotations\Entity;
-use Neos\Flow\Annotations\Identity;
 
 /**
  * @Entity()
@@ -24,10 +23,14 @@ use Neos\Flow\Annotations\Identity;
 class ClientSecret
 {
     /**
-     * @Identity()
      * @var string
      */
     protected string $flowAccountIdentifier;
+
+    /**
+     * @var string
+     */
+    protected string $assetSourceIdentifier;
 
     /**
      * @ORM\Column(type="text")
@@ -49,6 +52,16 @@ class ClientSecret
     public function setFlowAccountIdentifier(string $flowAccountIdentifier): void
     {
         $this->flowAccountIdentifier = $flowAccountIdentifier;
+    }
+
+    public function getAssetSourceIdentifier(): string
+    {
+        return $this->assetSourceIdentifier;
+    }
+
+    public function setAssetSourceIdentifier(string $assetSourceIdentifier): void
+    {
+        $this->assetSourceIdentifier = $assetSourceIdentifier;
     }
 
     public function getRefreshToken(): string

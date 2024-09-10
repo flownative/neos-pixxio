@@ -77,11 +77,14 @@ class PixxioAssetSource implements AssetSourceInterface
 
     private array $assetSourceOptions;
 
-    protected string $iconPath;
+    protected string $iconPath = 'resource://Flownative.Pixxio/Public/Icons/PixxioWhite.svg';
 
-    protected string $description;
+    protected string $label = 'pixx.io';
+
+    protected string $description = '';
 
     /**
+     * @throws \InvalidArgumentException
      */
     public function __construct(string $assetSourceIdentifier, array $assetSourceOptions)
     {
@@ -152,6 +155,9 @@ class PixxioAssetSource implements AssetSourceInterface
                 case 'icon':
                     $this->iconPath = $optionValue;
                     break;
+                case 'label':
+                    $this->label = $optionValue;
+                    break;
                 case 'description':
                     $this->description = $optionValue;
                     break;
@@ -173,7 +179,7 @@ class PixxioAssetSource implements AssetSourceInterface
 
     public function getLabel(): string
     {
-        return 'pixx.io';
+        return $this->label;
     }
 
     public function getAssetProxyRepository(): AssetProxyRepositoryInterface
@@ -215,7 +221,7 @@ class PixxioAssetSource implements AssetSourceInterface
 
             if ($this->securityContext->isInitialized() && $this->securityContext->getAccount()) {
                 $account = $this->securityContext->getAccount();
-                $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
+                $clientSecret = $this->clientSecretRepository->findOneByIdentifiers($this->assetSourceIdentifier, $account->getAccountIdentifier());
             } else {
                 $clientSecret = null;
                 $account = new Account();
@@ -225,6 +231,7 @@ class PixxioAssetSource implements AssetSourceInterface
             if (!empty($this->sharedRefreshToken) && ($clientSecret === null || $clientSecret->getRefreshToken() === '')) {
                 $clientSecret = new ClientSecret();
                 $clientSecret->setRefreshToken($this->sharedRefreshToken);
+                $clientSecret->setAssetSourceIdentifier($this->assetSourceIdentifier);
                 $clientSecret->setFlowAccountIdentifier('shared');
             }
 

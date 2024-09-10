@@ -61,7 +61,7 @@ class PixxioCommandController extends CommandController
     /**
      * Tag used assets
      *
-     * @param string $assetSource Name of the pixxio asset source
+     * @param string $assetSource Name of the pixx.io asset source
      * @param bool $quiet If set, only errors will be displayed.
      * @return void
      */

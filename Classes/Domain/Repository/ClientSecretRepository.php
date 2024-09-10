@@ -23,8 +23,15 @@ use Neos\Flow\Persistence\Repository;
  */
 class ClientSecretRepository extends Repository
 {
-    public function findOneByFlowAccountIdentifier(string $accountIdentifier): ?ClientSecret
+    public function findOneByIdentifiers(string $assetSourceIdentifier, string $accountIdentifier): ?ClientSecret
     {
-        return $this->__call('findOneByFlowAccountIdentifier', [$accountIdentifier]);
+        $query = $this->createQuery();
+        $query = $query->matching(
+            $query->logicalAnd(
+                $query->equals('assetSourceIdentifier', $assetSourceIdentifier),
+                $query->equals('flowAccountIdentifier', $accountIdentifier)
+            )
+        );
+        return $query->execute()->getFirst();
     }
 }

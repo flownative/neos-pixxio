@@ -1,46 +1,56 @@
 {namespace neos=Neos\Neos\ViewHelpers}
 <div class="neos-content neos-container-fluid">
     <h2>{neos:backend.translate(id: 'pixxioConnectionSettings', source: 'Main', package: 'Flownative.Pixxio')}</h2>
-    <br />
-    <f:form action="updateRefreshToken" method="post">
-        <div class="neos-row-fluid">
-            <div class="neos-span6">
-                <f:if condition="{sharedRefreshToken}">
-                    <f:then>
-                        <p>{neos:backend.translate(id: 'sharedRefreshTokenExists', source: 'Main', package: 'Flownative.Pixxio')}</p>
-                    </f:then>
-                    <f:else>
-                        <p>{neos:backend.translate(id: 'providePersonalRefreshToken', source: 'Main', package: 'Flownative.Pixxio')}<br />
-                            {neos:backend.translate(id: 'whereToFindRefreshTokenHint', source: 'Main', package: 'Flownative.Pixxio')}</p>
-                    </f:else>
-                </f:if>
-                <fieldset>
-                    <div class="neos-control-group">
-                        <label class="neos-control-label" for="apiEndpointUri">{neos:backend.translate(id: 'apiEndpointUri', source: 'Main', package: 'Flownative.Pixxio')}</label>
-                        <div class="neos-controls">
-                            <f:form.textfield name="pixxioUrl" id="apiEndpointUri" class="neos-span12" value="{apiEndpointUri}" readonly="true"/>
+    <br/>
+    <f:for each="{assetSourcesData}" as="assetSourceData" key="assetSourceIdentifier">
+        <f:form action="updateRefreshToken" method="post">
+            <f:form.hidden name="assetSourceIdentifier" value="{assetSourceIdentifier}"/>
+            <div class="neos-row-fluid">
+                <div class="neos-span6">
+                    <br/>
+                    <h3>{assetSourceData.label} – {assetSourceIdentifier}</h3>
+                    <f:if condition="{assetSourceData.description}">
+                    <br/>
+                    <i>{assetSourceData.description}</i><br/>
+                    </f:if>
+                    <br/>
+                    <f:if condition="{assetSourceData.sharedRefreshToken}">
+                        <f:then>
+                            <p><i class="fas fa-info"></i> {neos:backend.translate(id: 'sharedRefreshTokenExists', source: 'Main', package: 'Flownative.Pixxio')}</p>
+                        </f:then>
+                        <f:else>
+                            <p><i class="fas fa-exclamation-circle"></i> {neos:backend.translate(id: 'providePersonalRefreshToken', source: 'Main', package: 'Flownative.Pixxio')}<br />
+                                {neos:backend.translate(id: 'whereToFindRefreshTokenHint', source: 'Main', package: 'Flownative.Pixxio')}</p>
+                        </f:else>
+                    </f:if>
+                    <fieldset>
+                        <div class="neos-control-group">
+                            <label class="neos-control-label" for="apiEndpointUri">{neos:backend.translate(id: 'apiEndpointUri', source: 'Main', package: 'Flownative.Pixxio')}</label>
+                            <div class="neos-controls">
+                                <f:form.textfield name="pixxioUrl" id="apiEndpointUri" class="neos-span12" value="{assetSourceData.apiEndpointUri}" readonly="true"/>
+                            </div>
                         </div>
-                    </div>
-                    <div class="neos-control-group">
-                        <label class="neos-control-label" for="refreshToken">{neos:backend.translate(id: 'personalRefreshToken', source: 'Main', package: 'Flownative.Pixxio')}</label>
-                        <div class="neos-controls">
-                            <f:form.textfield name="refreshToken" id="refreshToken" class="neos-span12" value="{refreshToken}" />
+                        <div class="neos-control-group">
+                            <label class="neos-control-label" for="refreshToken">{neos:backend.translate(id: 'personalRefreshToken', source: 'Main', package: 'Flownative.Pixxio')}</label>
+                            <div class="neos-controls">
+                                <f:form.textfield name="refreshToken" id="refreshToken" class="neos-span12" value="{assetSourceData.refreshToken}" />
+                            </div>
                         </div>
-                    </div>
-                    <div class="neos-control-group">
-                        <div class="neos-controls">
-                            <f:form.submit value="{neos:backend.translate(id: 'updateRefreshToken', source: 'Main', package: 'Flownative.Pixxio')}" class="neos-button neos-button-primary" />
+                        <div class="neos-control-group">
+                            <div class="neos-controls">
+                                <f:form.submit value="{neos:backend.translate(id: 'updateRefreshToken', source: 'Main', package: 'Flownative.Pixxio')}" class="neos-button neos-button-primary" />
+                            </div>
                         </div>
-                    </div>
-                </fieldset>
-                <f:if condition="{connectionSucceeded}">
-                    <p><i class="fa fa-info"></i>{neos:backend.translate(id: 'connectionSucceeded', source: 'Main', package: 'Flownative.Pixxio')}</p>
-                </f:if>
-                <f:if condition="{authenticationError}">
-                    <p><i class="fa fa-exclamation-triangle"></i> {authenticationError}</p>
-                </f:if>
+                    </fieldset>
+                    <f:if condition="{assetSourceData.connectionSucceeded}">
+                        <p><i class="fa fa-info"></i>{neos:backend.translate(id: 'connectionSucceeded', source: 'Main', package: 'Flownative.Pixxio')}</p>
+                    </f:if>
+                    <f:if condition="{assetSourceData.authenticationError}">
+                        <p><i class="fa fa-exclamation-triangle"></i> {assetSourceData.authenticationError}</p>
+                    </f:if>
+                </div>
             </div>
-        </div>
-    </f:form>
-
+        </f:form>
+        <hr/>
+    </f:for>
 </div>

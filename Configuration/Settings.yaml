@@ -68,8 +68,11 @@ Neos:
           # The icon for the asset source
           icon: 'resource://Flownative.Pixxio/Public/Icons/PixxioWhite.svg'
 
+          # The label for the asset source
+          label: 'pixx.io assets'
+
           # The description for the asset source
-          description: 'Pixxio assets'
+          description: ''
 
   Neos:
     modules:

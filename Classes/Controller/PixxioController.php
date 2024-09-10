@@ -46,33 +46,44 @@ class PixxioController extends AbstractModuleController
 
     public function indexAction(): void
     {
-        $this->view->assign('apiEndpointUri', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']['apiEndpointUri']);
-        $this->view->assign('sharedRefreshToken', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']['sharedRefreshToken'] ?? null);
-
         $account = $this->securityContext->getAccount();
-        $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
-        if ($clientSecret !== null && $clientSecret->getRefreshToken()) {
-            $this->view->assign('refreshToken', $clientSecret->getRefreshToken());
-        }
 
-        try {
-            $assetSource = new PixxioAssetSource('flownative-pixxio', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']);
-            $assetSource->getPixxioClient();
-            $this->view->assign('connectionSucceeded', true);
-        } catch (MissingClientSecretException $e) {
-        } catch (AuthenticationFailedException $e) {
-            $this->view->assign('authenticationError', $e->getMessage());
+        $assetSourcesData = [];
+        foreach ($this->assetSourcesConfiguration as $assetSourceIdentifier => $assetSourceConfiguration) {
+            $assetSourceData = [];
+            if ($assetSourceConfiguration['assetSource'] !== PixxioAssetSource::class) {
+                continue;
+            }
+
+            $assetSourceData['label'] = $assetSourceConfiguration['assetSourceOptions']['label'] ?? 'pixx.io Asset Source';
+            $assetSourceData['description'] = $assetSourceConfiguration['assetSourceOptions']['description'] ?? null;
+            $assetSourceData['apiEndpointUri'] = $assetSourceConfiguration['assetSourceOptions']['apiEndpointUri'] ?? null;
+            $assetSourceData['sharedRefreshToken'] = $assetSourceConfiguration['assetSourceOptions']['sharedRefreshToken'] ?? null;
+            $clientSecret = $account ? $this->clientSecretRepository->findOneByIdentifiers($assetSourceIdentifier, $account->getAccountIdentifier()) : null;
+            if ($clientSecret !== null && $clientSecret->getRefreshToken()) {
+                $assetSourceData['refreshToken'] = $clientSecret->getRefreshToken();
+            }
+            try {
+                $assetSource = new PixxioAssetSource($assetSourceIdentifier, $assetSourceConfiguration['assetSourceOptions']);
+                $assetSource->getPixxioClient();
+                $assetSourceData['connectionSucceeded'] = true;
+            } catch (MissingClientSecretException|AuthenticationFailedException $exception) {
+                $assetSourceData['authenticationError'] = $exception->getMessage();
+            }
+
+            $assetSourcesData[$assetSourceIdentifier] = $assetSourceData;
         }
+        $this->view->assign('assetSourcesData', $assetSourcesData);
     }
 
     /**
      * @throws IllegalObjectTypeException
      * @throws UnsupportedRequestTypeException
      */
-    public function updateRefreshTokenAction(string $refreshToken = null): void
+    public function updateRefreshTokenAction(string $assetSourceIdentifier, string $refreshToken = null): void
     {
         $account = $this->securityContext->getAccount();
-        $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
+        $clientSecret = $this->clientSecretRepository->findOneByIdentifiers($assetSourceIdentifier, $account->getAccountIdentifier());
 
         if ($refreshToken === null) {
             if ($clientSecret !== null) {
@@ -87,12 +98,13 @@ class PixxioController extends AbstractModuleController
             $this->clientSecretRepository->update($clientSecret);
         } else {
             $clientSecret = new ClientSecret();
+            $clientSecret->setAssetSourceIdentifier($assetSourceIdentifier);
             $clientSecret->setFlowAccountIdentifier($account->getAccountIdentifier());
             $clientSecret->setRefreshToken($refreshToken);
             $clientSecret->setAccessToken(null);
             $this->clientSecretRepository->add($clientSecret);
         }
 
-        $this->redirectToUri('index');
+        $this->redirect('index');
     }
 }

@@ -34,25 +34,21 @@ class PixxioAssetSource implements AssetSourceInterface
 {
     /**
      * @Flow\Inject
-     * @var PixxioServiceFactory
      */
     protected PixxioServiceFactory $pixxioServiceFactory;
 
     /**
      * @Flow\Inject
-     * @var ClientSecretRepository
      */
     protected ClientSecretRepository $clientSecretRepository;
 
     /**
      * @Flow\Inject
-     * @var Context
      */
     protected Context $securityContext;
 
     /**
      * @Flow\Inject
-     * @var ResourceManager
      */
     protected ResourceManager $resourceManager;
 

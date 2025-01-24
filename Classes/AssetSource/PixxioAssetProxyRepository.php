@@ -80,12 +80,10 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
                 throw new AssetNotFoundException('Asset not found', 1526636260);
             }
             if (!isset($responseObject->success) || $responseObject->success !== 'true') {
-                switch ($responseObject->status) {
-                    case 403:
-                        throw new AccessToAssetDeniedException(sprintf('Failed retrieving asset: %s', $response->help ?? '-') , 1589815740);
-                    default:
-                        throw new AssetNotFoundException(sprintf('Failed retrieving asset, unexpected API response: %s', $response->help ?? '-') , 1589354288);
-                }
+                throw match ($responseObject->status) {
+                    403 => new AccessToAssetDeniedException(sprintf('Failed retrieving asset: %s', $response->help ?? '-'), 1589815740),
+                    default => new AssetNotFoundException(sprintf('Failed retrieving asset, unexpected API response: %s', $response->help ?? '-'), 1589354288),
+                };
             }
 
             $this->assetProxyCache->set($cacheEntryIdentifier, Utils::jsonEncode($responseObject, JSON_FORCE_OBJECT));

@@ -31,7 +31,7 @@ class PixxioController extends AbstractModuleController
      * @Flow\Inject
      * @var Context
      */
-    protected $securityContext;
+    protected Context $securityContext;
 
     /**
      * @Flow\InjectConfiguration(path="assetSources", package="Neos.Media")
@@ -42,7 +42,7 @@ class PixxioController extends AbstractModuleController
      * @Flow\Inject
      * @var ClientSecretRepository
      */
-    protected $clientSecretRepository;
+    protected ClientSecretRepository $clientSecretRepository;
 
     public function indexAction(): void
     {
@@ -64,6 +64,7 @@ class PixxioController extends AbstractModuleController
                 $assetSourceData['refreshToken'] = $clientSecret->getRefreshToken();
             }
             try {
+                /** @var PixxioAssetSource $assetSource */
                 $assetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
                 $assetSource->getPixxioClient();
                 $assetSourceData['connectionSucceeded'] = true;

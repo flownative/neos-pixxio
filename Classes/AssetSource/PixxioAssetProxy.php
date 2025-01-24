@@ -68,7 +68,7 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
      * @Flow\Inject
      * @var ImportedAssetRepository
      */
-    protected $importedAssetRepository;
+    protected ImportedAssetRepository $importedAssetRepository;
 
     /**
      * @throws Exception

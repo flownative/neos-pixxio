@@ -15,8 +15,6 @@ namespace Flownative\Pixxio\Service;
  */
 
 use Neos\Flow\Annotations as Flow;
-use Neos\Flow\Persistence\PersistenceManagerInterface;
-use Neos\Flow\Utility\Environment;
 
 /**
  * Factory for the Pixx.io service class
@@ -25,18 +23,6 @@ use Neos\Flow\Utility\Environment;
  */
 class PixxioServiceFactory
 {
-    /**
-     * @Flow\Inject
-     * @var Environment
-     */
-    protected $environment;
-
-    /**
-     * @Flow\Inject
-     * @var PersistenceManagerInterface
-     */
-    protected $persistenceManager;
-
     /**
      * Creates a new PixxioClient instance and authenticates against the Pixx.io API
      *

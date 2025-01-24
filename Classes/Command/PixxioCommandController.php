@@ -19,34 +19,24 @@ use Neos\Media\Domain\Model\AssetCollection;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceAwareInterface;
 use Neos\Media\Domain\Repository\AssetCollectionRepository;
 use Neos\Media\Domain\Repository\AssetRepository;
-use Neos\Media\Domain\Repository\TagRepository;
 use Neos\Media\Domain\Service\AssetSourceService;
 
 class PixxioCommandController extends CommandController
 {
     /**
      * @Flow\Inject
-     * @var AssetRepository
      */
-    protected $assetRepository;
+    protected AssetRepository $assetRepository;
 
     /**
      * @Flow\Inject
-     * @var AssetSourceService
      */
-    protected $assetSourceService;
+    protected AssetSourceService $assetSourceService;
 
     /**
      * @Flow\Inject
-     * @var TagRepository
      */
-    protected $tagRepository;
-
-    /**
-     * @Flow\Inject
-     * @var AssetCollectionRepository
-     */
-    protected $assetCollectionRepository;
+    protected AssetCollectionRepository $assetCollectionRepository;
 
     /**
      * @Flow\InjectConfiguration(path="assetSources", package="Neos.Media")
@@ -87,12 +77,11 @@ class PixxioCommandController extends CommandController
     public function tagUsedAssetsCommand(string $assetSource, bool $quiet = false): void
     {
         $assetSourceIdentifier = $assetSource;
-        $iterator = $this->assetRepository->findAllIterator();
-
         !$quiet && $this->outputLine('<b>Tagging used assets of asset source "%s" via Pixxio API:</b>', [$assetSourceIdentifier]);
 
         try {
-            $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSource]['assetSourceOptions']);
+            /** @var PixxioAssetSource $pixxioAssetSource */
+            $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
             $pixxioClient = $pixxioAssetSource->getPixxioClient();
         } catch (MissingClientSecretException) {
             $this->outputLine('<error>Authentication error: Missing client secret</error>');
@@ -111,26 +100,10 @@ class PixxioCommandController extends CommandController
         assert($assetProxyRepository instanceof PixxioAssetProxyRepository);
         $assetProxyRepository->getAssetProxyCache()->flush();
 
+        $iterator = $this->assetRepository->findAllIterator();
         foreach ($this->assetRepository->iterate($iterator) as $asset) {
-            if (!$asset instanceof Asset) {
-                continue;
-            }
-            if (!$asset instanceof AssetSourceAwareInterface) {
-                continue;
-            }
-            if ($asset->getAssetSourceIdentifier() !== $assetSourceIdentifier) {
-                continue;
-            }
-
-            try {
-                $assetProxy = $asset->getAssetProxy();
-            } catch (AccessToAssetDeniedException $exception) {
-                $this->outputLine('   error   %s', [$exception->getMessage()]);
-                continue;
-            }
-
-            if (!$assetProxy instanceof PixxioAssetProxy) {
-                $this->outputLine('   error   Asset "%s" (%s) could not be accessed via pixx.io API', [$asset->getLabel(), $asset->getIdentifier()]);
+            $assetProxy = $this->getPixxioAssetProxy($asset, $assetSourceIdentifier);
+            if ($assetProxy === null) {
                 continue;
             }
 
@@ -185,25 +158,8 @@ class PixxioCommandController extends CommandController
         $assetsWereUpdated = false;
 
         foreach ($this->assetRepository->iterate($iterator) as $asset) {
-            if (!$asset instanceof Asset) {
-                continue;
-            }
-            if (!$asset instanceof AssetSourceAwareInterface) {
-                continue;
-            }
-            if ($asset->getAssetSourceIdentifier() !== $assetSourceIdentifier) {
-                continue;
-            }
-
-            try {
-                $assetProxy = $asset->getAssetProxy();
-            } catch (AccessToAssetDeniedException $exception) {
-                $this->outputLine('   error   %s', [$exception->getMessage()]);
-                continue;
-            }
-
-            if (!$assetProxy instanceof PixxioAssetProxy) {
-                $this->outputLine('   error   Asset "%s" (%s) could not be accessed via pixx.io API', [$asset->getLabel(), $asset->getIdentifier()]);
+            $assetProxy = $this->getPixxioAssetProxy($asset, $assetSourceIdentifier);
+            if ($assetProxy === null) {
                 continue;
             }
 
@@ -260,6 +216,7 @@ class PixxioCommandController extends CommandController
         !$quiet && $this->outputLine('<b>Importing categories as asset collections via pixx.io API</b>');
 
         try {
+            /** @var PixxioAssetSource $pixxioAssetSource */
             $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSource, $this->assetSourcesConfiguration[$assetSource]['assetSourceOptions']);
             $pixxioClient = $pixxioAssetSource->getPixxioClient();
         } catch (\Exception) {
@@ -319,5 +276,32 @@ class PixxioCommandController extends CommandController
         }
 
         return false;
+    }
+
+    private function getPixxioAssetProxy(mixed $asset, string $assetSourceIdentifier): ?PixxioAssetProxy
+    {
+        if (!$asset instanceof AssetSourceAwareInterface) {
+            return null;
+        }
+        if (!$asset instanceof Asset) {
+            return null;
+        }
+        if ($asset->getAssetSourceIdentifier() !== $assetSourceIdentifier) {
+            return null;
+        }
+
+        try {
+            $assetProxy = $asset->getAssetProxy();
+        } catch (AccessToAssetDeniedException $exception) {
+            $this->outputLine('   error   %s', [$exception->getMessage()]);
+            return null;
+        }
+
+        if (!$assetProxy instanceof PixxioAssetProxy) {
+            $this->outputLine('   error   Asset "%s" (%s) could not be accessed via pixx.io API', [$asset->getLabel(), $asset->getIdentifier()]);
+            return null;
+        }
+
+        return $assetProxy;
     }
 }

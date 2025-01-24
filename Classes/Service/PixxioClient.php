@@ -278,12 +278,4 @@ final class PixxioClient
             throw new ConnectionException('Retrieving categories failed: ' . $exception->getMessage(), 1642430939);
         }
     }
-
-    /**
-     * @return string
-     */
-    public function getAccessToken(): string
-    {
-        return $this->accessToken;
-    }
 }

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Flownative\Pixxio\Tests\Unit;
 
 use Flownative\Pixxio\AssetSource\PixxioAssetSource;
@@ -11,7 +13,7 @@ use PHPUnit\Framework\MockObject\MockObject;
  */
 class PixxioCommandControllerTest extends UnitTestCase
 {
-    protected static $assetSourceOptions = [
+    protected static array $assetSourceOptions = [
         'mapping' => [
             'categoriesMaximumDepth' => 2,
             'categories' => [
@@ -29,7 +31,7 @@ class PixxioCommandControllerTest extends UnitTestCase
 
     private MockObject|PixxioCommandController $commandController;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->commandController = new PixxioCommandController();
 

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Flownative\Pixxio\AssetSource;
 
@@ -17,6 +18,7 @@ use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Utils;
 use Neos\Flow\Annotations\Inject;
 use Neos\Flow\Log\ThrowableStorageInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
@@ -29,194 +31,117 @@ use Psr\Log\LoggerInterface;
  */
 final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
 {
-    /**
-     * @var PixxioAssetSource
-     */
-    private $assetSource;
+    private PixxioAssetSource $assetSource;
 
-    /**
-     * @var string
-     */
-    private $searchTerm = '';
+    private string $searchTerm = '';
 
-    /**
-     * @var string
-     */
-    private $assetTypeFilter = 'All';
+    private string $assetTypeFilter = 'All';
 
-    /**
-     * @var ?string
-     */
-    private $assetCollectionFilter;
+    private ?string $assetCollectionFilter;
 
-    /**
-     * @var array
-     */
-    private $orderings = [];
+    private array $orderings = [];
 
-    /**
-     * @var int
-     */
-    private $offset = 0;
+    private int $offset = 0;
 
-    /**
-     * @var int
-     */
-    private $limit = 30;
+    private int $limit = 30;
 
-    /**
-     * @var string
-     */
-    private $parentFolderIdentifier = '';
+    private string $parentFolderIdentifier = '';
 
     /**
      * @Inject
-     * @var LoggerInterface
      */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     /**
      * @Inject
-     * @var ThrowableStorageInterface
      */
-    protected $throwableStorage;
+    protected ThrowableStorageInterface $throwableStorage;
 
-    /**
-     * @param PixxioAssetSource $assetSource
-     */
     public function __construct(PixxioAssetSource $assetSource)
     {
         $this->assetSource = $assetSource;
     }
 
-    /**
-     * @param int $offset
-     */
     public function setOffset(int $offset): void
     {
         $this->offset = $offset;
     }
 
-    /**
-     * @return int
-     */
     public function getOffset(): int
     {
         return $this->offset;
     }
 
-    /**
-     * @param int $limit
-     */
     public function setLimit(int $limit): void
     {
         $this->limit = $limit;
     }
 
-    /**
-     * @return int
-     */
     public function getLimit(): int
     {
         return $this->limit;
     }
 
-    /**
-     * @param string $searchTerm
-     */
     public function setSearchTerm(string $searchTerm): void
     {
         $this->searchTerm = $searchTerm;
     }
 
-    /**
-     * @return string
-     */
     public function getSearchTerm(): string
     {
         return $this->searchTerm;
     }
 
-    /**
-     * @param string $assetTypeFilter
-     */
     public function setAssetTypeFilter(string $assetTypeFilter): void
     {
         $this->assetTypeFilter = $assetTypeFilter;
     }
 
-    /**
-     * @return string
-     */
     public function getAssetTypeFilter(): string
     {
         return $this->assetTypeFilter;
     }
 
-    /**
-     * @param ?string $assetCollectionFilter
-     */
     public function setAssetCollectionFilter(?string $assetCollectionFilter): void
     {
         $this->assetCollectionFilter = $assetCollectionFilter;
     }
 
-    /**
-     * @return ?string
-     */
     public function getAssetCollectionFilter(): ?string
     {
         return $this->assetCollectionFilter;
     }
 
-    /**
-     * @return array
-     */
     public function getOrderings(): array
     {
         return $this->orderings;
     }
 
-    /**
-     * @param array $orderings
-     */
     public function setOrderings(array $orderings): void
     {
         $this->orderings = $orderings;
     }
 
-    /**
-     * @return string
-     */
     public function getParentFolderIdentifier(): string
     {
         return $this->parentFolderIdentifier;
     }
 
-    /**
-     * @param string $parentFolderIdentifier
-     */
     public function setParentFolderIdentifier(string $parentFolderIdentifier): void
     {
         $this->parentFolderIdentifier = $parentFolderIdentifier;
     }
 
-    /**
-     * @return AssetProxyQueryResultInterface
-     */
     public function execute(): AssetProxyQueryResultInterface
     {
         return new PixxioAssetProxyQueryResult($this);
     }
 
-    /**
-     * @return int
-     */
     public function count(): int
     {
         try {
             $response = $this->sendSearchRequest(1, []);
-            $responseObject = \GuzzleHttp\json_decode($response->getBody());
+            $responseObject = Utils::jsonDecode($response->getBody()->getContents());
 
             if (!isset($responseObject->quantity)) {
                 if (isset($responseObject->help)) {
@@ -225,7 +150,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
                 }
                 return 0;
             }
-            return $responseObject->quantity;
+            return (int)$responseObject->quantity;
         } catch (AuthenticationFailedException $exception) {
             $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1526629541, $exception));
             $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
@@ -250,7 +175,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
         try {
             $assetProxies = [];
             $response = $this->sendSearchRequest($this->limit, $this->orderings);
-            $responseObject = \GuzzleHttp\json_decode($response->getBody());
+            $responseObject = Utils::jsonDecode($response->getBody()->getContents());
 
             if (!isset($responseObject->files)) {
                 return [];
@@ -271,9 +196,6 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
     }
 
     /**
-     * @param int $limit
-     * @param array $orderings
-     * @return Response
      * @throws AuthenticationFailedException
      * @throws MissingClientSecretException
      * @throws ConnectionException

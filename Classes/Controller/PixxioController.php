@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Flownative\Pixxio\Controller;
 
@@ -19,7 +20,6 @@ use Flownative\Pixxio\Domain\Repository\ClientSecretRepository;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
 use Neos\Flow\Annotations as Flow;
-use Neos\Flow\Mvc\Exception\StopActionException;
 use Neos\Flow\Mvc\Exception\UnsupportedRequestTypeException;
 use Neos\Flow\Persistence\Exception\IllegalObjectTypeException;
 use Neos\Flow\Security\Context;
@@ -31,54 +31,60 @@ class PixxioController extends AbstractModuleController
      * @Flow\Inject
      * @var Context
      */
-    protected $securityContext;
+    protected Context $securityContext;
 
     /**
      * @Flow\InjectConfiguration(path="assetSources", package="Neos.Media")
-     * @var array
      */
-    protected $assetSourcesConfiguration;
+    protected array $assetSourcesConfiguration = [];
 
     /**
      * @Flow\Inject
      * @var ClientSecretRepository
      */
-    protected $clientSecretRepository;
+    protected ClientSecretRepository $clientSecretRepository;
 
-    /**
-     * @return void
-     */
-    public function indexAction()
+    public function indexAction(): void
     {
-        $this->view->assign('apiEndpointUri', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']['apiEndpointUri']);
-        $this->view->assign('sharedRefreshToken', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']['sharedRefreshToken'] ?? null);
-
         $account = $this->securityContext->getAccount();
-        $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
-        if ($clientSecret !== null && $clientSecret->getRefreshToken()) {
-            $this->view->assign('refreshToken', $clientSecret->getRefreshToken());
-        }
 
-        try {
-            $assetSource = new PixxioAssetSource('flownative-pixxio', $this->assetSourcesConfiguration['flownative-pixxio']['assetSourceOptions']);
-            $assetSource->getPixxioClient();
-            $this->view->assign('connectionSucceeded', true);
-        } catch (MissingClientSecretException $e) {
-        } catch (AuthenticationFailedException $e) {
-            $this->view->assign('authenticationError', $e->getMessage());
+        $assetSourcesData = [];
+        foreach ($this->assetSourcesConfiguration as $assetSourceIdentifier => $assetSourceConfiguration) {
+            $assetSourceData = [];
+            if ($assetSourceConfiguration['assetSource'] !== PixxioAssetSource::class) {
+                continue;
+            }
+
+            $assetSourceData['label'] = $assetSourceConfiguration['assetSourceOptions']['label'] ?? 'pixx.io Asset Source';
+            $assetSourceData['description'] = $assetSourceConfiguration['assetSourceOptions']['description'] ?? null;
+            $assetSourceData['apiEndpointUri'] = $assetSourceConfiguration['assetSourceOptions']['apiEndpointUri'] ?? null;
+            $assetSourceData['sharedRefreshToken'] = $assetSourceConfiguration['assetSourceOptions']['sharedRefreshToken'] ?? null;
+            $clientSecret = $account ? $this->clientSecretRepository->findOneByIdentifiers($assetSourceIdentifier, $account->getAccountIdentifier()) : null;
+            if ($clientSecret !== null && $clientSecret->getRefreshToken()) {
+                $assetSourceData['refreshToken'] = $clientSecret->getRefreshToken();
+            }
+            try {
+                /** @var PixxioAssetSource $assetSource */
+                $assetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
+                $assetSource->getPixxioClient();
+                $assetSourceData['connectionSucceeded'] = true;
+            } catch (MissingClientSecretException|AuthenticationFailedException $exception) {
+                $assetSourceData['authenticationError'] = $exception->getMessage();
+            }
+
+            $assetSourcesData[$assetSourceIdentifier] = $assetSourceData;
         }
+        $this->view->assign('assetSourcesData', $assetSourcesData);
     }
 
     /**
-     * @param string $refreshToken
-     * @throws StopActionException
-     * @throws UnsupportedRequestTypeException
      * @throws IllegalObjectTypeException
+     * @throws UnsupportedRequestTypeException
      */
-    public function updateRefreshTokenAction(string $refreshToken = null)
+    public function updateRefreshTokenAction(string $assetSourceIdentifier, string $refreshToken = null): void
     {
         $account = $this->securityContext->getAccount();
-        $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
+        $clientSecret = $this->clientSecretRepository->findOneByIdentifiers($assetSourceIdentifier, $account->getAccountIdentifier());
 
         if ($refreshToken === null) {
             if ($clientSecret !== null) {
@@ -93,12 +99,13 @@ class PixxioController extends AbstractModuleController
             $this->clientSecretRepository->update($clientSecret);
         } else {
             $clientSecret = new ClientSecret();
+            $clientSecret->setAssetSourceIdentifier($assetSourceIdentifier);
             $clientSecret->setFlowAccountIdentifier($account->getAccountIdentifier());
             $clientSecret->setRefreshToken($refreshToken);
             $clientSecret->setAccessToken(null);
             $this->clientSecretRepository->add($clientSecret);
         }
 
-        $this->redirectToUri('index');
+        $this->redirect('index');
     }
 }

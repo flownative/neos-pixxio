@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Flownative\Pixxio\AssetSource;
 
@@ -26,104 +27,70 @@ use Neos\Flow\Security\Context;
 use Neos\Flow\ResourceManagement\ResourceManager;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyRepositoryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceInterface;
+use Neos\Utility\Arrays;
 use Neos\Utility\MediaTypes;
 
 class PixxioAssetSource implements AssetSourceInterface
 {
     /**
-     * @var string
+     * @Flow\Inject
      */
-    private $assetSourceIdentifier;
-
-    /**
-     * @var PixxioAssetProxyRepository
-     */
-    private $assetProxyRepository;
+    protected PixxioServiceFactory $pixxioServiceFactory;
 
     /**
      * @Flow\Inject
-     * @var PixxioServiceFactory
      */
-    protected $pixxioServiceFactory;
+    protected ClientSecretRepository $clientSecretRepository;
 
     /**
      * @Flow\Inject
-     * @var ClientSecretRepository
      */
-    protected $clientSecretRepository;
+    protected Context $securityContext;
 
     /**
      * @Flow\Inject
-     * @var Context
      */
-    protected $securityContext;
+    protected ResourceManager $resourceManager;
 
     /**
-     * @Flow\Inject
-     * @var ResourceManager
+     * @Flow\InjectConfiguration(path="defaults", package="Flownative.Pixxio")
      */
-    protected $resourceManager;
+    protected array $defaultConfiguration = [];
+
+    private ?PixxioAssetProxyRepository $assetProxyRepository = null;
+
+    private ?PixxioClient $pixxioClient = null;
+
+    private string $assetSourceIdentifier;
+
+    private array $assetSourceOptions;
+
+    private string $apiEndpointUri;
+
+    private string $apiKey;
+
+    private array $apiClientOptions = [];
+
+    private array $imageOptions = [];
+
+    private string $sharedRefreshToken;
+
+    private bool $autoTaggingEnabled = false;
+
+    private string $autoTaggingInUseTag = 'used-by-neos';
+
+    protected string $iconPath = 'resource://Flownative.Pixxio/Public/Icons/PixxioWhite.svg';
+
+    protected string $label = 'pixx.io';
+
+    protected string $description = '';
+
+    protected array $mapping = [];
 
     /**
-     * @var string
+     * @throws \InvalidArgumentException
      */
-    private $apiEndpointUri;
-
-    /**
-     * @var string
-     */
-    private $apiKey;
-
-    /**
-     * @var array
-     */
-    private $apiClientOptions = [];
-
-    /**
-     * @var array
-     */
-    private $imageOptions = [];
-
-    /**
-     * @var string
-     */
-    private $sharedRefreshToken;
-
-    /**
-     * @var PixxioClient
-     */
-    private $pixxioClient;
-
-    /**
-     * @var bool
-     */
-    private $autoTaggingEnable = false;
-
-    /**
-     * @var string
-     */
-    private $autoTaggingInUseTag = 'used-by-neos';
-
-    /**
-     * @var array
-     */
-    private $assetSourceOptions;
-
-    /**
-     * @var string
-     */
-    protected $iconPath;
-
-    /**
-     * @var string
-     */
-    protected $description = '';
-
-    /**
-     * @param string $assetSourceIdentifier
-     * @param array $assetSourceOptions
-     */
-    public function __construct(string $assetSourceIdentifier, array $assetSourceOptions)
+    protected function __construct(string $assetSourceIdentifier, array $assetSourceOptions)
     {
         if (preg_match('/^[a-z][a-z0-9-]{0,62}[a-z]$/', $assetSourceIdentifier) !== 1) {
             throw new \InvalidArgumentException(sprintf('Invalid asset source identifier "%s". The identifier must match /^[a-z][a-z0-9-]{0,62}[a-z]$/', $assetSourceIdentifier), 1525790890);
@@ -131,8 +98,13 @@ class PixxioAssetSource implements AssetSourceInterface
 
         $this->assetSourceIdentifier = $assetSourceIdentifier;
         $this->assetSourceOptions = $assetSourceOptions;
+    }
 
-        foreach ($assetSourceOptions as $optionName => $optionValue) {
+    public function initializeObject(): void
+    {
+        $this->assetSourceOptions = Arrays::arrayMergeRecursiveOverrule($this->defaultConfiguration['assetSourceOptions'], $this->assetSourceOptions);
+
+        foreach ($this->assetSourceOptions as $optionName => $optionValue) {
             switch ($optionName) {
                 case 'apiEndpointUri':
                     $uri = new Uri($optionValue);
@@ -140,96 +112,100 @@ class PixxioAssetSource implements AssetSourceInterface
                 break;
                 case 'apiKey':
                     if (!is_string($optionValue) || empty($optionValue)) {
-                        throw new \InvalidArgumentException(sprintf('Invalid api key specified for Pixx.io asset source %s', $assetSourceIdentifier), 1525792639);
+                        throw new \InvalidArgumentException(sprintf('Invalid api key specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1525792639);
                     }
                     $this->apiKey = $optionValue;
                 break;
                 case 'apiClientOptions':
                     if (!is_array($optionValue)) {
-                        throw new \InvalidArgumentException(sprintf('Invalid api client options specified for Pixx.io asset source %s', $assetSourceIdentifier), 1591605348);
+                        throw new \InvalidArgumentException(sprintf('Invalid api client options specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1591605348);
                     }
                     $this->apiClientOptions = $optionValue;
                     break;
                 case 'imageOptions':
                     if (!is_array($optionValue)) {
-                        throw new \InvalidArgumentException(sprintf('Invalid image options specified for Pixx.io asset source %s', $assetSourceIdentifier), 1591605349);
+                        throw new \InvalidArgumentException(sprintf('Invalid image options specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1591605349);
                     }
                     $this->imageOptions = $optionValue;
                     break;
                 case 'sharedRefreshToken':
                     if (!is_string($optionValue) || empty($optionValue)) {
-                        throw new \InvalidArgumentException(sprintf('Invalid shared refresh token specified for Pixx.io asset source %s', $assetSourceIdentifier), 1528806843);
+                        throw new \InvalidArgumentException(sprintf('Invalid shared refresh token specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1528806843);
                     }
                     $this->sharedRefreshToken = $optionValue;
                 break;
                 case 'mediaTypes':
                     if (!is_array($optionValue)) {
-                        throw new \InvalidArgumentException(sprintf('Invalid media types specified for Pixx.io asset source %s', $assetSourceIdentifier), 1542809628);
+                        throw new \InvalidArgumentException(sprintf('Invalid media types specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1542809628);
                     }
                     foreach ($optionValue as $mediaType => $mediaTypeOptions) {
                         if (MediaTypes::getFilenameExtensionsFromMediaType($mediaType) === []) {
-                            throw new \InvalidArgumentException(sprintf('Unknown media type "%s" specified for Pixx.io asset source %s', $mediaType, $assetSourceIdentifier), 1542809775);
+                            throw new \InvalidArgumentException(sprintf('Unknown media type "%s" specified for pixx.io asset source %s', $mediaType, $this->assetSourceIdentifier), 1542809775);
                         }
                     }
                 break;
                 case 'autoTagging':
                     if (!is_array($optionValue)) {
-                        throw new \InvalidArgumentException(sprintf('Invalid auto tagging configuration specified for Pixx.io asset source %s', $assetSourceIdentifier), 1587561121);
+                        throw new \InvalidArgumentException(sprintf('Invalid auto tagging configuration specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1587561121);
                     }
                     foreach ($optionValue as $autoTaggingOptionName => $autoTaggingOptionValue) {
                         switch ($autoTaggingOptionName) {
                             case 'enable':
-                                $this->autoTaggingEnable = (bool)$autoTaggingOptionValue;
+                                $this->autoTaggingEnabled = (bool)$autoTaggingOptionValue;
                             break;
                             case 'inUseTag':
                                 $this->autoTaggingInUseTag = preg_replace('/[^A-Za-z0-9&_+ßäöüÄÖÜ.@ -]+/u', '', (string)$autoTaggingOptionValue);
                             break;
                             default:
-                                throw new \InvalidArgumentException(sprintf('Unknown asset source option "%s" specified for autoTagging in Pixx.io asset source "%s". Please check your settings.', $autoTaggingOptionName, $assetSourceIdentifier), 1587561244);
+                                throw new \InvalidArgumentException(sprintf('Unknown asset source option "%s" specified for autoTagging in pixx.io asset source "%s". Please check your settings.', $autoTaggingOptionName, $this->assetSourceIdentifier), 1587561244);
                         }
                     }
                 break;
                 case 'icon':
+                    if (!is_string($optionValue)) {
+                        throw new \InvalidArgumentException(sprintf('Invalid icon specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1725985121);
+                    }
                     $this->iconPath = $optionValue;
                     break;
+                case 'label':
+                    if (!is_string($optionValue)) {
+                        throw new \InvalidArgumentException(sprintf('Invalid label specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1725985129);
+                    }
+                    $this->label = $optionValue;
+                    break;
                 case 'description':
+                    if (!is_string($optionValue)) {
+                        throw new \InvalidArgumentException(sprintf('Invalid description specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1725985133);
+                    }
                     $this->description = $optionValue;
                     break;
+                case 'mapping':
+                    if (!is_array($optionValue)) {
+                        throw new \InvalidArgumentException(sprintf('Invalid mapping options specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1725985041);
+                    }
+                    $this->mapping = $optionValue;
+                    break;
                 default:
-                    throw new \InvalidArgumentException(sprintf('Unknown asset source option "%s" specified for Pixx.io asset source "%s". Please check your settings.', $optionName, $assetSourceIdentifier), 1525790910);
+                    throw new \InvalidArgumentException(sprintf('Unknown asset source option "%s" specified for pixx.io asset source "%s". Please check your settings.', $optionName, $this->assetSourceIdentifier), 1525790910);
             }
         }
     }
 
-    /**
-     * @param string $assetSourceIdentifier
-     * @param array $assetSourceOptions
-     * @return AssetSourceInterface
-     */
     public static function createFromConfiguration(string $assetSourceIdentifier, array $assetSourceOptions): AssetSourceInterface
     {
         return new static($assetSourceIdentifier, $assetSourceOptions);
     }
 
-    /**
-     * @return string
-     */
     public function getIdentifier(): string
     {
         return $this->assetSourceIdentifier;
     }
 
-    /**
-     * @return string
-     */
     public function getLabel(): string
     {
-        return 'pixx.io';
+        return $this->label;
     }
 
-    /**
-     * @return AssetProxyRepositoryInterface
-     */
     public function getAssetProxyRepository(): AssetProxyRepositoryInterface
     {
         if ($this->assetProxyRepository === null) {
@@ -239,40 +215,27 @@ class PixxioAssetSource implements AssetSourceInterface
         return $this->assetProxyRepository;
     }
 
-    /**
-     * @return bool
-     */
     public function isReadOnly(): bool
     {
         return true;
     }
 
-    /**
-     * @return array
-     */
     public function getAssetSourceOptions(): array
     {
         return $this->assetSourceOptions;
     }
 
-    /**
-     * @return bool
-     */
     public function isAutoTaggingEnabled(): bool
     {
-        return $this->autoTaggingEnable;
+        return $this->autoTaggingEnabled;
     }
 
-    /**
-     * @return string
-     */
     public function getAutoTaggingInUseTag(): string
     {
         return $this->autoTaggingInUseTag;
     }
 
     /**
-     * @return PixxioClient
      * @throws MissingClientSecretException
      * @throws AuthenticationFailedException
      */
@@ -282,7 +245,7 @@ class PixxioAssetSource implements AssetSourceInterface
 
             if ($this->securityContext->isInitialized() && $this->securityContext->getAccount()) {
                 $account = $this->securityContext->getAccount();
-                $clientSecret = $this->clientSecretRepository->findOneByFlowAccountIdentifier($account->getAccountIdentifier());
+                $clientSecret = $this->clientSecretRepository->findOneByIdentifiers($this->assetSourceIdentifier, $account->getAccountIdentifier());
             } else {
                 $clientSecret = null;
                 $account = new Account();
@@ -292,6 +255,7 @@ class PixxioAssetSource implements AssetSourceInterface
             if (!empty($this->sharedRefreshToken) && ($clientSecret === null || $clientSecret->getRefreshToken() === '')) {
                 $clientSecret = new ClientSecret();
                 $clientSecret->setRefreshToken($this->sharedRefreshToken);
+                $clientSecret->setAssetSourceIdentifier($this->assetSourceIdentifier);
                 $clientSecret->setFlowAccountIdentifier('shared');
             }
 
@@ -300,7 +264,6 @@ class PixxioAssetSource implements AssetSourceInterface
             }
 
             $this->pixxioClient = $this->pixxioServiceFactory->createForAccount(
-                $account->getAccountIdentifier(),
                 $this->apiEndpointUri,
                 $this->apiKey,
                 $this->apiClientOptions,
@@ -321,6 +284,4 @@ class PixxioAssetSource implements AssetSourceInterface
     {
         return $this->description;
     }
-
-
 }

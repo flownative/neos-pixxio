@@ -1,28 +1,43 @@
 <?php
+declare(strict_types=1);
+
 namespace Flownative\Pixxio\Tests\Unit;
 
+use Flownative\Pixxio\AssetSource\PixxioAssetSource;
 use Flownative\Pixxio\Command\PixxioCommandController;
 use Neos\Flow\Tests\UnitTestCase;
-use Neos\Flow\Aop;
+use PHPUnit\Framework\MockObject\MockObject;
 
 /**
  * Testcase for the command controller
  */
 class PixxioCommandControllerTest extends UnitTestCase
 {
-    protected static $mapping = [
-        'categoriesMaximumDepth' => 2,
-        'categories' => [
-            'home*' => ['asAssetCollection' => false],
-            'Kunde A*' => ['asAssetCollection' => false],
-            '*' => ['asAssetCollection' => true]
+    protected static array $assetSourceOptions = [
+        'mapping' => [
+            'categoriesMaximumDepth' => 2,
+            'categories' => [
+                'home*' => ['asAssetCollection' => false],
+                'Kunde A*' => ['asAssetCollection' => false],
+                '*' => ['asAssetCollection' => true]
+            ],
         ],
     ];
 
-    public function setUp(): void
+    /**
+     * @var MockObject|PixxioAssetSource
+     */
+    private $mockAssetSource;
+
+    private MockObject|PixxioCommandController $commandController;
+
+    protected function setUp(): void
     {
-        $this->mockCommandController = $this->getAccessibleMock(PixxioCommandController::class, ['dummy']);
-        $this->mockCommandController->_set('mapping', self::$mapping);
+        $this->commandController = new PixxioCommandController();
+
+//        $this->mockAssetSource = $this->getAccessibleMock(PixxioAssetSource::class, ['getAssetSourceOptions']);
+        $this->mockAssetSource = $this->getMockBuilder(PixxioAssetSource::class)->disableOriginalConstructor()->onlyMethods(['getAssetSourceOptions'])->getMock();
+        $this->mockAssetSource->method('getAssetSourceOptions')->willReturn(self::$assetSourceOptions);
     }
 
     public function categoriesMappingProvider(): array
@@ -51,6 +66,6 @@ class PixxioCommandControllerTest extends UnitTestCase
      */
     public function shouldBeImportedAsAssetCollectionWorks(string $category, bool $expected): void
     {
-        self::assertSame($expected, $this->mockCommandController->_call('shouldBeImportedAsAssetCollection', $category), $category);
+        self::assertSame($expected, $this->commandController->shouldBeImportedAsAssetCollection($this->mockAssetSource, $category), $category);
     }
 }

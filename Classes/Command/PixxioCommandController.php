@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Flownative\Pixxio\Command;
 
 use Flownative\Pixxio\AssetSource\PixxioAssetProxy;
@@ -6,80 +8,86 @@ use Flownative\Pixxio\AssetSource\PixxioAssetProxyRepository;
 use Flownative\Pixxio\AssetSource\PixxioAssetSource;
 use Flownative\Pixxio\Exception\AccessToAssetDeniedException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
+use Flownative\Pixxio\Exception\ConnectionException;
 use Flownative\Pixxio\Exception\MissingClientSecretException;
+use GuzzleHttp\Utils;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
-use Neos\Flow\Cli\Exception\StopCommandException;
 use Neos\Flow\Persistence\Exception\IllegalObjectTypeException;
 use Neos\Media\Domain\Model\Asset;
 use Neos\Media\Domain\Model\AssetCollection;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceAwareInterface;
 use Neos\Media\Domain\Repository\AssetCollectionRepository;
 use Neos\Media\Domain\Repository\AssetRepository;
-use Neos\Media\Domain\Repository\TagRepository;
 use Neos\Media\Domain\Service\AssetSourceService;
 
 class PixxioCommandController extends CommandController
 {
     /**
      * @Flow\Inject
-     * @var AssetRepository
      */
-    protected $assetRepository;
+    protected AssetRepository $assetRepository;
 
     /**
      * @Flow\Inject
-     * @var AssetSourceService
      */
-    protected $assetSourceService;
+    protected AssetSourceService $assetSourceService;
 
     /**
      * @Flow\Inject
-     * @var TagRepository
      */
-    protected $tagRepository;
-
-    /**
-     * @Flow\Inject
-     * @var AssetCollectionRepository
-     */
-    protected $assetCollectionRepository;
-
-    /**
-     * @Flow\InjectConfiguration(path="mapping", package="Flownative.Pixxio")
-     * @var array
-     */
-    protected $mapping = [];
+    protected AssetCollectionRepository $assetCollectionRepository;
 
     /**
      * @Flow\InjectConfiguration(path="assetSources", package="Neos.Media")
-     * @var array
      */
-    protected $assetSourcesConfiguration;
+    protected array $assetSourcesConfiguration = [];
+
+    /**
+     * List all configured (pixx.io) asset sources
+     *
+     * @param bool $showAll If true, all types of asset sources will be shown
+     * @return void
+     */
+    public function listCommand(bool $showAll = false): void
+    {
+        $assetSourcesData = [];
+
+        foreach ($this->assetSourceService->getAssetSources() as $assetSource) {
+            if ($showAll || $assetSource instanceof PixxioAssetSource) {
+                $assetSourcesData[] = [
+                    $assetSource->getIdentifier(),
+                    $assetSource->getLabel(),
+                    get_class($assetSource),
+                    $assetSource->getDescription()
+                ];
+            }
+        }
+
+        $this->output->outputTable($assetSourcesData, ['Identifier', 'Label', 'Type', 'Description']);
+    }
 
     /**
      * Tag used assets
      *
-     * @param string $assetSource Name of the pixxio asset source
-     * @param bool $quiet If set, only errors will be displayed.
+     * @param string $assetSource Name of the pixx.io asset source
+     * @param bool $quiet If set, only errors will be displayed
      * @return void
-     * @throws
      */
-    public function tagUsedAssetsCommand(string $assetSource = 'flownative-pixxio', bool $quiet = false): void
+    public function tagUsedAssetsCommand(string $assetSource, bool $quiet = false): void
     {
         $assetSourceIdentifier = $assetSource;
-        $iterator = $this->assetRepository->findAllIterator();
-
         !$quiet && $this->outputLine('<b>Tagging used assets of asset source "%s" via Pixxio API:</b>', [$assetSourceIdentifier]);
 
         try {
-            $pixxioAssetSource = new PixxioAssetSource($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
+            /** @var PixxioAssetSource $pixxioAssetSource */
+            $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
             $pixxioClient = $pixxioAssetSource->getPixxioClient();
-        } catch (MissingClientSecretException $e) {
+        } catch (MissingClientSecretException) {
             $this->outputLine('<error>Authentication error: Missing client secret</error>');
             exit(1);
-        } catch (AuthenticationFailedException $e) {
-            $this->outputLine('<error>Authentication error: %s</error>', [$e->getMessage()]);
+        } catch (AuthenticationFailedException $exception) {
+            $this->outputLine('<error>Authentication error: %s</error>', [$exception->getMessage()]);
             exit(1);
         }
 
@@ -92,26 +100,10 @@ class PixxioCommandController extends CommandController
         assert($assetProxyRepository instanceof PixxioAssetProxyRepository);
         $assetProxyRepository->getAssetProxyCache()->flush();
 
+        $iterator = $this->assetRepository->findAllIterator();
         foreach ($this->assetRepository->iterate($iterator) as $asset) {
-            if (!$asset instanceof Asset) {
-                continue;
-            }
-            if (!$asset instanceof AssetSourceAwareInterface) {
-                continue;
-            }
-            if ($asset->getAssetSourceIdentifier() !== $assetSourceIdentifier) {
-                continue;
-            }
-
-            try {
-                $assetProxy = $asset->getAssetProxy();
-            } catch (AccessToAssetDeniedException $exception) {
-                $this->outputLine('   error   %s', [$exception->getMessage()]);
-                continue;
-            }
-
-            if (!$assetProxy instanceof PixxioAssetProxy) {
-                $this->outputLine('   error   Asset "%s" (%s) could not be accessed via Pixxio-API', [$asset->getLabel(), $asset->getIdentifier()]);
+            $assetProxy = $this->getPixxioAssetProxy($asset, $assetSourceIdentifier);
+            if ($assetProxy === null) {
                 continue;
             }
 
@@ -146,17 +138,18 @@ class PixxioCommandController extends CommandController
     /**
      * Update metadata
      *
-     * @param string $assetSource
-     * @param bool $quiet
+     * @param string $assetSource Name of the pixx.io asset source
+     * @param bool $quiet If set, only errors will be displayed.
+     * @throws IllegalObjectTypeException
      */
-    public function updateMetadataCommand(string $assetSource = 'flownative-pixxio', bool $quiet = false): void
+    public function updateMetadataCommand(string $assetSource, bool $quiet = false): void
     {
         $assetSourceIdentifier = $assetSource;
         $iterator = $this->assetRepository->findAllIterator();
 
         !$quiet && $this->outputLine('<b>Updating metadata of currently used assets from source "%s":</b>', [$assetSourceIdentifier]);
 
-        $pixxioAssetSource = new PixxioAssetSource($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
+        $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSource]['assetSourceOptions']);
 
         $assetProxyRepository = $pixxioAssetSource->getAssetProxyRepository();
         assert($assetProxyRepository instanceof PixxioAssetProxyRepository);
@@ -165,25 +158,8 @@ class PixxioCommandController extends CommandController
         $assetsWereUpdated = false;
 
         foreach ($this->assetRepository->iterate($iterator) as $asset) {
-            if (!$asset instanceof Asset) {
-                continue;
-            }
-            if (!$asset instanceof AssetSourceAwareInterface) {
-                continue;
-            }
-            if ($asset->getAssetSourceIdentifier() !== $assetSourceIdentifier) {
-                continue;
-            }
-
-            try {
-                $assetProxy = $asset->getAssetProxy();
-            } catch (AccessToAssetDeniedException $exception) {
-                $this->outputLine('   error   %s', [$exception->getMessage()]);
-                continue;
-            }
-
-            if (!$assetProxy instanceof PixxioAssetProxy) {
-                $this->outputLine('   error   Asset "%s" (%s) could not be accessed via Pixxio-API', [$asset->getLabel(), $asset->getIdentifier()]);
+            $assetProxy = $this->getPixxioAssetProxy($asset, $assetSourceIdentifier);
+            if ($assetProxy === null) {
                 continue;
             }
 
@@ -228,40 +204,41 @@ class PixxioCommandController extends CommandController
     /**
      * Import pixx.io categories as asset collections
      *
-     * @param string $assetSourceIdentifier Name of the pixx.io asset source (defaults to "flownative-pixxio")
-     * @param bool $quiet If set, only errors will be displayed.
-     * @param bool $dryRun If set, no changes will be made.
+     * @param string $assetSource Name of the pixx.io asset source
+     * @param bool $quiet If set, only errors will be displayed
+     * @param bool $dryRun If set, no changes will be made
      * @return void
      * @throws IllegalObjectTypeException
-     * @throws \Flownative\Pixxio\Exception\ConnectionException
+     * @throws ConnectionException
      */
-    public function importCategoriesAsCollectionsCommand(string $assetSourceIdentifier = 'flownative-pixxio', bool $quiet = true, bool $dryRun = false): void
+    public function importCategoriesAsCollectionsCommand(string $assetSource, bool $quiet = true, bool $dryRun = false): void
     {
         !$quiet && $this->outputLine('<b>Importing categories as asset collections via pixx.io API</b>');
 
         try {
-            $pixxioAssetSource = new PixxioAssetSource($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
-            $cantoClient = $pixxioAssetSource->getPixxioClient();
-        } catch (\Exception $e) {
+            /** @var PixxioAssetSource $pixxioAssetSource */
+            $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSource, $this->assetSourcesConfiguration[$assetSource]['assetSourceOptions']);
+            $pixxioClient = $pixxioAssetSource->getPixxioClient();
+        } catch (\Exception) {
             $this->outputLine('<error>pixx.io client could not be created</error>');
             $this->quit(1);
         }
 
-        $response = $cantoClient->getCategories();
-        $responseObject = \GuzzleHttp\json_decode($response->getBody());
+        $response = $pixxioClient->getCategories();
+        $responseObject = Utils::jsonDecode($response->getBody()->getContents());
         foreach ($responseObject->categories as $categoryPath) {
             $categoryPath = ltrim($categoryPath, '/');
-            if ($this->shouldBeImportedAsAssetCollection($categoryPath)) {
+            if ($this->shouldBeImportedAsAssetCollection($pixxioAssetSource, $categoryPath)) {
                 $assetCollection = $this->assetCollectionRepository->findOneByTitle($categoryPath);
 
-                if (!($assetCollection instanceof AssetCollection)) {
+                if ($assetCollection instanceof AssetCollection) {
+                    !$quiet && $this->outputLine('= %s', [$categoryPath]);
+                } else {
                     if (!$dryRun) {
                         $assetCollection = new AssetCollection($categoryPath);
                         $this->assetCollectionRepository->add($assetCollection);
                     }
                     !$quiet && $this->outputLine('+ %s', [$categoryPath]);
-                } else {
-                    !$quiet && $this->outputLine('= %s', [$categoryPath]);
                 }
             } else {
                 !$quiet && $this->outputLine('o %s', [$categoryPath]);
@@ -271,9 +248,9 @@ class PixxioCommandController extends CommandController
         !$quiet && $this->outputLine('<success>Import done.</success>');
     }
 
-    public function shouldBeImportedAsAssetCollection(string $categoryPath): bool
+    public function shouldBeImportedAsAssetCollection(PixxioAssetSource $assetSource, string $categoryPath): bool
     {
-        $categoriesMapping = $this->mapping['categories'];
+        $categoriesMapping = $assetSource->getAssetSourceOptions()['mapping']['categories'];
         if (empty($categoriesMapping)) {
             $this->outputLine('<error>No categories configured for mapping</error>');
             $this->quit(1);
@@ -282,7 +259,7 @@ class PixxioCommandController extends CommandController
         $categoryPath = ltrim($categoryPath, '/');
 
         // depth limit
-        if (substr_count($categoryPath, '/') >= $this->mapping['categoriesMaximumDepth']) {
+        if (substr_count($categoryPath, '/') >= $assetSource->getAssetSourceOptions()['mapping']['categoriesMaximumDepth']) {
             return false;
         }
 
@@ -299,5 +276,32 @@ class PixxioCommandController extends CommandController
         }
 
         return false;
+    }
+
+    private function getPixxioAssetProxy(mixed $asset, string $assetSourceIdentifier): ?PixxioAssetProxy
+    {
+        if (!$asset instanceof AssetSourceAwareInterface) {
+            return null;
+        }
+        if (!$asset instanceof Asset) {
+            return null;
+        }
+        if ($asset->getAssetSourceIdentifier() !== $assetSourceIdentifier) {
+            return null;
+        }
+
+        try {
+            $assetProxy = $asset->getAssetProxy();
+        } catch (AccessToAssetDeniedException $exception) {
+            $this->outputLine('   error   %s', [$exception->getMessage()]);
+            return null;
+        }
+
+        if (!$assetProxy instanceof PixxioAssetProxy) {
+            $this->outputLine('   error   Asset "%s" (%s) could not be accessed via pixx.io API', [$asset->getLabel(), $asset->getIdentifier()]);
+            return null;
+        }
+
+        return $assetProxy;
     }
 }

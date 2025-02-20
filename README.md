@@ -81,6 +81,21 @@ message with further details).
 
 ## Additional configuration options
 
+### Label
+
+You can configure a custom label for the asset source like this:
+
+```yaml
+Neos:
+  Media:
+    assetSources:
+      'acme-pixxio':
+        assetSourceOptions:
+          label: 'ACME assets'
+```
+
+### Additional configuration for specific media types
+
 During import, Neos tries to use a medium-sized version of the original instead of the high resolution file uploaded to
 pixx.io. This greatly improves import speed and produces good results in most cases. Furthermore, this way some formats,
 like Adobe Photoshop, can be used seamlessly in Neos without the need to prior converting them into a web-compatible image

@@ -1,16 +1,14 @@
 <?php
+
 namespace Flownative\Pixxio\Command;
 
 use Flownative\Pixxio\AssetSource\PixxioAssetProxy;
 use Flownative\Pixxio\AssetSource\PixxioAssetProxyRepository;
 use Flownative\Pixxio\AssetSource\PixxioAssetSource;
 use Flownative\Pixxio\Exception\AccessToAssetDeniedException;
-use Flownative\Pixxio\Exception\AuthenticationFailedException;
-use Flownative\Pixxio\Exception\MissingClientSecretException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
 use Neos\Media\Domain\Model\Asset;
-use Neos\Media\Domain\Model\AssetSource\AssetProxy\SupportsIptcMetadataInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceAwareInterface;
 use Neos\Media\Domain\Repository\AssetRepository;
 
@@ -26,7 +24,7 @@ class PixxioCommandController extends CommandController
      * @Flow\InjectConfiguration(path="assetSources", package="Neos.Media")
      * @var array
      */
-    protected $assetSourcesConfiguration;
+    protected array $assetSourcesConfiguration = [];
 
     /**
      * Tag used assets
@@ -39,20 +37,11 @@ class PixxioCommandController extends CommandController
     public function tagUsedAssetsCommand(string $assetSource = 'flownative-pixxio', bool $quiet = false): void
     {
         $assetSourceIdentifier = $assetSource;
-        $iterator = $this->assetRepository->findAllIterator();
-
         !$quiet && $this->outputLine('<b>Tagging used assets of asset source "%s" via Pixxio API:</b>', [$assetSourceIdentifier]);
 
-        try {
-            $pixxioAssetSource = new PixxioAssetSource($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
-            $pixxioClient = $pixxioAssetSource->getPixxioClient();
-        } catch (MissingClientSecretException $e) {
-            $this->outputLine('<error>Authentication error: Missing client secret</error>');
-            exit(1);
-        } catch (AuthenticationFailedException $e) {
-            $this->outputLine('<error>Authentication error: %s</error>', [$e->getMessage()]);
-            exit(1);
-        }
+        /** @var PixxioAssetSource $pixxioAssetSource */
+        $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
+        $pixxioClient = $pixxioAssetSource->getPixxioClient();
 
         if (!$pixxioAssetSource->isAutoTaggingEnabled()) {
             $this->outputLine('<error>Auto-tagging is disabled</error>');
@@ -63,6 +52,7 @@ class PixxioCommandController extends CommandController
         assert($assetProxyRepository instanceof PixxioAssetProxyRepository);
         $assetProxyRepository->getAssetProxyCache()->flush();
 
+        $iterator = $this->assetRepository->findAllIterator();
         foreach ($this->assetRepository->iterate($iterator) as $asset) {
             if (!$asset instanceof Asset) {
                 continue;
@@ -127,7 +117,7 @@ class PixxioCommandController extends CommandController
 
         !$quiet && $this->outputLine('<b>Updating metadata of currently used assets from source "%s":</b>', [$assetSourceIdentifier]);
 
-        $pixxioAssetSource = new PixxioAssetSource($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
+        $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
 
         $assetProxyRepository = $pixxioAssetSource->getAssetProxyRepository();
         assert($assetProxyRepository instanceof PixxioAssetProxyRepository);

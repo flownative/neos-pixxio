@@ -42,14 +42,3 @@ Neos:
           autoTagging:
             enable: false
             inUseTag: 'used-by-neos'
-
-  Neos:
-    modules:
-      management:
-        submodules:
-          flownativePixxio:
-            controller: \Flownative\Pixxio\Controller\PixxioController
-            label: 'pixx.io'
-            description: 'Flownative.Pixxio:Main:moduleDescription'
-            icon: 'icon-photo'
-            privilegeTarget: 'Flownative.Pixxio:ManageConnection'

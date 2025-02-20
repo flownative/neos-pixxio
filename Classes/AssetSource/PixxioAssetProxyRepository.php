@@ -18,9 +18,7 @@ use Flownative\Pixxio\Exception\AccessToAssetDeniedException;
 use Flownative\Pixxio\Exception\AssetNotFoundException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
-use Flownative\Pixxio\Exception\MissingClientSecretException;
 use Neos\Cache\Frontend\StringFrontend;
-use Neos\Cache\Frontend\VariableFrontend;
 use Neos\Flow\ObjectManagement\DependencyInjection\DependencyProxy;
 use Neos\Media\Domain\Model\AssetSource\AssetNotFoundExceptionInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
@@ -31,33 +29,18 @@ use Neos\Media\Domain\Model\AssetSource\AssetTypeFilter;
 use Neos\Media\Domain\Model\AssetSource\SupportsSortingInterface;
 use Neos\Media\Domain\Model\Tag;
 
-/**
- * PixxioAssetProxyRepository
- */
 class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, SupportsSortingInterface
 {
-    /**
-     * @var PixxioAssetSource
-     */
-    private $assetSource;
+    private PixxioAssetSource $assetSource;
 
-    /**
-     * @param PixxioAssetSource $assetSource
-     */
     public function __construct(PixxioAssetSource $assetSource)
     {
         $this->assetSource = $assetSource;
     }
 
-    /**
-     * @var string
-     */
-    private $assetTypeFilter = 'All';
+    private string $assetTypeFilter = 'All';
 
-    /**
-     * @var array
-     */
-    private $orderings = [];
+    private array $orderings = [];
 
     /**
      * @var StringFrontend
@@ -65,11 +48,8 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
     protected $assetProxyCache;
 
     /**
-     * @param string $identifier
-     * @return AssetProxyInterface
      * @throws AssetNotFoundExceptionInterface
      * @throws AssetSourceConnectionExceptionInterface
-     * @throws MissingClientSecretException
      * @throws AuthenticationFailedException
      * @throws AssetNotFoundException
      * @throws ConnectionException
@@ -84,40 +64,25 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         $cacheEntry = $this->assetProxyCache->get($cacheEntryIdentifier);
 
         if ($cacheEntry) {
-            $responseObject = \GuzzleHttp\json_decode($cacheEntry);
-        } else {
-            $response = $client->getFile($identifier);
-            $responseObject = \GuzzleHttp\json_decode($response->getBody());
-
-            if (!$responseObject instanceof \stdClass) {
-                throw new AssetNotFoundException('Asset not found', 1526636260);
-            }
-            if (!isset($responseObject->success) || $responseObject->success !== 'true') {
-                switch ($responseObject->status) {
-                    case 403:
-                        throw new AccessToAssetDeniedException(sprintf('Failed retrieving asset: %s', $response->help ?? '-') , 1589815740);
-                    break;
-                    default:
-                        throw new AssetNotFoundException(sprintf('Failed retrieving asset, unexpected API response: %s', $response->help ?? '-') , 1589354288);
-                }
-            }
-
-            $this->assetProxyCache->set($cacheEntryIdentifier, \GuzzleHttp\json_encode($responseObject, JSON_FORCE_OBJECT));
+            $cachedObject = json_decode($cacheEntry, false, 512, JSON_THROW_ON_ERROR);
+            return PixxioAssetProxy::fromJsonObject($cachedObject, $this->assetSource);
         }
-        return PixxioAssetProxy::fromJsonObject($responseObject, $this->assetSource);
+
+        $responseObject = $client->getFile($identifier);
+
+        if (!isset($responseObject->success) || $responseObject->success !== true) {
+            throw new AssetNotFoundException(sprintf('Failed retrieving asset, unexpected API response: %s', $response->errorMessage ?? '-'), 1589354288);
+        }
+
+        $this->assetProxyCache->set($cacheEntryIdentifier, json_encode($responseObject->file, JSON_THROW_ON_ERROR));
+        return PixxioAssetProxy::fromJsonObject($responseObject->file, $this->assetSource);
     }
 
-    /**
-     * @param AssetTypeFilter $assetType
-     */
     public function filterByType(AssetTypeFilter $assetType = null): void
     {
         $this->assetTypeFilter = (string)$assetType ?: 'All';
     }
 
-    /**
-     * @return AssetProxyQueryResultInterface
-     */
     public function findAll(): AssetProxyQueryResultInterface
     {
         $query = new PixxioAssetProxyQuery($this->assetSource);
@@ -126,10 +91,6 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         return new PixxioAssetProxyQueryResult($query);
     }
 
-    /**
-     * @param string $searchTerm
-     * @return AssetProxyQueryResultInterface
-     */
     public function findBySearchTerm(string $searchTerm): AssetProxyQueryResultInterface
     {
         $query = new PixxioAssetProxyQuery($this->assetSource);
@@ -139,10 +100,6 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         return new PixxioAssetProxyQueryResult($query);
     }
 
-    /**
-     * @param Tag $tag
-     * @return AssetProxyQueryResultInterface
-     */
     public function findByTag(Tag $tag): AssetProxyQueryResultInterface
     {
         $query = new PixxioAssetProxyQuery($this->assetSource);
@@ -152,9 +109,6 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         return new PixxioAssetProxyQueryResult($query);
     }
 
-    /**
-     * @return AssetProxyQueryResultInterface
-     */
     public function findUntagged(): AssetProxyQueryResultInterface
     {
         $query = new PixxioAssetProxyQuery($this->assetSource);
@@ -163,34 +117,16 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         return new PixxioAssetProxyQueryResult($query);
     }
 
-    /**
-     * @return int
-     */
     public function countAll(): int
     {
-        $query = new PixxioAssetProxyQuery($this->assetSource);
-        return $query->count();
+        return (new PixxioAssetProxyQuery($this->assetSource))->count();
     }
 
-    /**
-     * Sets the property names to order results by. Expected like this:
-     * array(
-     *  'filename' => SupportsSorting::ORDER_ASCENDING,
-     *  'lastModified' => SupportsSorting::ORDER_DESCENDING
-     * )
-     *
-     * @param array $orderings The property names to order by by default
-     * @return void
-     * @api
-     */
     public function orderBy(array $orderings): void
     {
         $this->orderings = $orderings;
     }
 
-    /**
-     * @return StringFrontend
-     */
     public function getAssetProxyCache(): StringFrontend
     {
         if ($this->assetProxyCache instanceof DependencyProxy) {

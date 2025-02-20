@@ -15,7 +15,7 @@ class Version20180517083014 extends AbstractMigration
      */
     public function getDescription()
     {
-        return '';
+        return 'Introduce Client Secret';
     }
 
     /**

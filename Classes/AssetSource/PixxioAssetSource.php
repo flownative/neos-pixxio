@@ -98,6 +98,11 @@ class PixxioAssetSource implements AssetSourceInterface
     private $assetSourceOptions;
 
     /**
+     * @var string
+     */
+    protected $label = 'pixx.io';
+
+    /**
      * @param string $assetSourceIdentifier
      * @param array $assetSourceOptions
      */
@@ -161,6 +166,9 @@ class PixxioAssetSource implements AssetSourceInterface
                         }
                     }
                 break;
+                case 'label':
+                    $this->label = $optionValue;
+                break;
                 default:
                     throw new \InvalidArgumentException(sprintf('Unknown asset source option "%s" specified for Pixx.io asset source "%s". Please check your settings.', $optionName, $assetSourceIdentifier), 1525790910);
             }
@@ -190,7 +198,7 @@ class PixxioAssetSource implements AssetSourceInterface
      */
     public function getLabel(): string
     {
-        return 'pixx.io';
+        return $this->label;
     }
 
     /**

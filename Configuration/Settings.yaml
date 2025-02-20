@@ -10,6 +10,8 @@ Neos:
       'flownative-pixxio':
         assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
         assetSourceOptions:
+          # A custom label for this Pixx.io asset source
+          label: 'pixx.io'
 
           # The customer-specific endpoint URI pointing to the Pixx.io API:
           # Example: 'https://flownative.pixxio.media/cgi-bin/api/pixxio-api.pl'

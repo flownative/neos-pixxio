@@ -17,42 +17,21 @@ use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
 
-/**
- *
- */
 class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
 {
-    /**
-     * @var PixxioAssetProxyQuery
-     */
-    private $query;
+    private PixxioAssetProxyQuery $query;
 
-    /**
-     * @var array
-     */
-    private $assetProxies;
+    private ?array $assetProxies = null;
 
-    /**
-     * @var int
-     */
-    private $numberOfAssetProxies;
+    private ?int $numberOfAssetProxies = null;
 
-    /**
-     * @var \ArrayIterator
-     */
-    private $assetProxiesIterator;
+    private \ArrayIterator $assetProxiesIterator;
 
-    /**
-     * @param PixxioAssetProxyQuery $query
-     */
     public function __construct(PixxioAssetProxyQuery $query)
     {
         $this->query = $query;
     }
 
-    /**
-     * @return void
-     */
     private function initialize(): void
     {
         if ($this->assetProxies === null) {
@@ -61,17 +40,11 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
         }
     }
 
-    /**
-     * @return AssetProxyQueryInterface
-     */
     public function getQuery(): AssetProxyQueryInterface
     {
         return clone $this->query;
     }
 
-    /**
-     * @return AssetProxyInterface|null
-     */
     public function getFirst(): ?AssetProxyInterface
     {
         $this->initialize();
@@ -140,17 +113,16 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
     {
     }
 
-    /**
-     * @return int
-     */
     public function count(): int
     {
         if ($this->numberOfAssetProxies === null) {
             if (is_array($this->assetProxies)) {
-                return count($this->assetProxies);
+                $this->numberOfAssetProxies = count($this->assetProxies);
             } else {
-                return $this->query->count();
+                $this->numberOfAssetProxies = $this->query->count();
             }
         }
+
+        return $this->numberOfAssetProxies;
     }
 }

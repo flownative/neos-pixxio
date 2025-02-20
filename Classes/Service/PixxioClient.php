@@ -20,144 +20,84 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Neos\Flow\Http\Uri;
 use Neos\Media\Domain\Model\AssetSource\SupportsSortingInterface;
-use Psr\Http\Message\ResponseInterface;
-
 
 /**
  * Pixx.io API client
  */
 final class PixxioClient
 {
-    /**
-     * @var Client
-     */
-    private $guzzleClient;
+    private Client $guzzleClient;
 
-    /**
-     * @var string
-     */
-    private $apiEndpointUri;
+    private string $apiEndpointUri;
 
-    /**
-     * @var string
-     */
-    private $apiKey;
+    private array $imageOptions;
 
-    /**
-     * @var array
-     */
-    private $apiClientOptions;
-
-    /**
-     * @var string
-     */
-    private $accessToken;
-
-    /**
-     * @var array
-     */
-    private $imageOptions;
-
-    /**
-     * @var array
-     */
-    private $fields = [
-        'id', 'originalFilename', 'fileType', 'keywords', 'createDate', 'imageHeight', 'imageWidth', 'originalPath', 'subject', 'description',
-        'modifyDate', 'fileSize', 'modifiedImagePaths', 'imagePath', 'dynamicMetadata'
+    private static array $fields = [
+        'id', 'fileName', 'fileType', 'keywords', 'height', 'width', 'originalFileURL', 'subject', 'description',
+        'modifyDate', 'fileSize', 'previewFileURL', 'modifiedPreviewFileURLs', 'importantMetadata'
     ];
 
-
-    /**
-     * @param string $apiEndpointUri
-     * @param string $apiKey
-     * @param array $apiClientOptions
-     */
-    public function __construct(string $apiEndpointUri, string $apiKey, array $apiClientOptions)
-    {
-        $this->apiEndpointUri = $apiEndpointUri;
-        $this->apiKey = $apiKey;
-        $this->apiClientOptions = $apiClientOptions;
-        $this->guzzleClient = new Client($this->apiClientOptions);
-        $this->imageOptions  = [
-            (object)[
+    private static array $defaultImageOptions = [
+        'thumbnailUri' =>
+            [
                 'width' => 400,
                 'height' => 400,
                 'quality' => 90
             ],
-            (object)[
+        'previewUri' =>
+            [
                 'width' => 1500,
                 'height' => 1500,
                 'quality' => 90
             ],
-            (object)[
-                'sizeMax' => 1920,
+        'originalUri' =>
+            [
+                'maxSize' => 1920,
                 'quality' => 90
             ]
-        ];
-    }
+    ];
 
-    /**
-     * @param string $refreshToken
-     * @throws AuthenticationFailedException
-     */
-    public function authenticate(string $refreshToken): void
+    public function __construct(string $apiEndpointUri, string $apiKey, array $apiClientOptions, array $imageOptions)
     {
-        try {
-            $response = $this->guzzleClient->request(
-                'POST',
-                $this->apiEndpointUri . '/json/accessToken',
-                [
-                    'form_params' => [
-                        'apiKey' => $this->apiKey,
-                        'refreshToken' => $refreshToken
-                    ]
+        $this->apiEndpointUri = rtrim($apiEndpointUri, '/');
+        $this->guzzleClient = new Client($apiClientOptions + [
+                'base_uri' => $this->apiEndpointUri,
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey
                 ]
-            );
-        } catch (GuzzleException $e) {
-            throw new AuthenticationFailedException('Authentication failed: ' . $e->getMessage(), 1542808119);
-        }
+            ]);
 
-        $result = \GuzzleHttp\json_decode($response->getBody()->getContents());
-        if ($result->success === 'true' && isset($result->accessToken)) {
-            $this->accessToken = $result->accessToken;
-            return;
-        }
+        foreach (self::$defaultImageOptions as $imageOptionPresetKey => $imageOptionPresetConfiguration) {
+            $imageOption = $imageOptions[$imageOptionPresetKey] ?? $imageOptionPresetConfiguration;
 
-        throw new AuthenticationFailedException('Authentication failed: ' . ($result->help ?? 'Unknown cause'), 1526545835);
+            if (isset($imageOption['crop'], $imageOption['height']) && $imageOption['crop'] === false) {
+                unset($imageOption['height'], $imageOption['crop']);
+            }
+
+            $this->imageOptions[] = $imageOption;
+        }
     }
 
+
     /**
-     * @param string $id
-     * @return ResponseInterface
-     * @throws ConnectionException
+     * @throws Exception
+     * @throws \JsonException
      */
-    public function getFile(string $id): ResponseInterface
+    public function getFile(string $id): object
     {
         $options = new \stdClass();
-        $options->imageOptions = $this->imageOptions;
-        $options->fields = $this->fields;
+        $options->previewFileOptions = json_encode($this->imageOptions, JSON_THROW_ON_ERROR);
+        $options->responseFields = json_encode(self::$fields, JSON_THROW_ON_ERROR);
 
-        $uri = new Uri( $this->apiEndpointUri . '/json/files/' . $id);
-        $uri = $uri->withQuery(
-            'accessToken=' . $this->accessToken . '&' .
-            'options=' . \GuzzleHttp\json_encode($options)
-        );
-
-        $client = new Client($this->apiClientOptions);
-        try {
-            return $client->request('GET', $uri);
-        } catch (GuzzleException $e) {
-            throw new ConnectionException('Retrieving file failed: ' . $e->getMessage(), 1542808207);
-        }
+        $uri = new Uri($this->apiEndpointUri . '/files/' . $id);
+        $uri = $uri->withQuery(http_build_query($options));
+        return $this->request('GET', $uri);
     }
 
     /**
-     * @param string $id
-     * @param array $metadata
-     * @return ResponseInterface
      * @throws Exception
      */
-    public function updateFile(string $id, array $metadata): ResponseInterface
+    public function updateFile(string $id, array $metadata): object
     {
         if (!isset($metadata['keywords'])) {
             throw new Exception('updateFile: Only support for keywords is implemented yet', 1587559102);
@@ -166,53 +106,85 @@ final class PixxioClient
         $options = new \stdClass();
         $options->keywords = $metadata['keywords'];
 
-        $uri = new Uri( $this->apiEndpointUri . '/json/files/' . $id);
-        $uri = $uri->withQuery(
-            'accessToken=' . $this->accessToken
-        );
-
-        $client = new Client($this->apiClientOptions);
+        $uri = new Uri($this->apiEndpointUri . '/files/' . $id);
         try {
-            return $client->request(
+            return $this->guzzleClient->request(
                 'PUT',
                 $uri,
                 [
                     'form_params' => [
-                        'options' => \GuzzleHttp\json_encode($options)
+                        'options' => json_encode($options)
                     ]
                 ]
             );
-        } catch (GuzzleException $e) {
-            throw new ConnectionException('Updating file failed: ' . $e->getMessage(), 1587559150);
+        } catch (GuzzleException $exception) {
+            throw new ConnectionException('Updating file failed: ' . $exception->getMessage(), 1587559150);
         }
     }
 
     /**
-     * @param string $queryExpression
-     * @param array $formatTypes
-     * @param array $fileTypes
-     * @param int $offset
-     * @param int $limit
-     * @param array $orderings
-     * @return ResponseInterface
+     * @throws AuthenticationFailedException
      * @throws ConnectionException
+     * @throws \JsonException
      */
-    public function search(string $queryExpression, array $formatTypes, array $fileTypes, int $offset = 0, int $limit = 50, $orderings = []): ResponseInterface
+    public function search(string $queryExpression, string $formatType, array $fileTypes, int $offset = 0, int $limit = 50, array $orderings = []): object
     {
         $options = new \stdClass();
-        $options->pagination = $limit . '-' . (int)($offset / $limit + 1);
-        $options->imageOptions = $this->imageOptions;
-        $options->fields = $this->fields;
-        $options->formatType = $formatTypes;
-        $options->fileType = implode(',', $fileTypes);
+        $options->pageSize = $limit;
+        $options->page = (int)($offset / $limit + 1);
+        $options->previewFileOptions = json_encode($this->imageOptions, JSON_THROW_ON_ERROR);
+        $options->responseFields = json_encode(self::$fields, JSON_THROW_ON_ERROR);
 
+        $filters = [];
+        if ($formatType !== '') {
+            $filters[] = ['filterType' => 'fileType', 'fileType' => $formatType];
+        }
+        if ($fileTypes !== []) {
+            foreach ($fileTypes as $fileType) {
+                $filters[] = ['filterType' => 'fileExtension', 'fileExtension' => $fileType];
+            }
+        }
         if (!empty($queryExpression)) {
-            $options->searchTerm = urlencode($queryExpression);
+            $filters[] = [
+                'filterType' => 'connectorOr',
+                'filters' => [[
+                    'filterType' => 'subject',
+                    'term' => $queryExpression,
+                    'exactMatch' => false,
+                    'useSynonyms' => true,
+                ], [
+                    'filterType' => 'description',
+                    'term' => $queryExpression,
+                    'exactMatch' => false,
+                    'useSynonyms' => true,
+                ], [
+                    'filterType' => 'keyword',
+                    'term' => $queryExpression,
+                    'exactMatch' => false,
+                    'useSynonyms' => true,
+                ], [
+                    'filterType' => 'fileName',
+                    'term' => $queryExpression,
+                    'exactMatch' => false,
+                    'useSynonyms' => true,
+                ]]
+            ];
         }
 
-        if (isset($orderings['filename'])) {
-            $options->sortBy = 'filename';
-            $options->sortDirection = ($orderings['filename'] === SupportsSortingInterface::ORDER_DESCENDING) ? 'descending' : 'ascending';
+        if ($filters !== []) {
+            if (count($filters) > 1) {
+                $options->filter = json_encode([
+                    'filterType' => 'connectorAnd',
+                    'filters' => $filters
+                ], JSON_THROW_ON_ERROR);
+            } else {
+                $options->filter = json_encode(current($filters), JSON_THROW_ON_ERROR);
+            }
+        }
+
+        if (isset($orderings['resource.filename'])) {
+            $options->sortBy = 'fileName';
+            $options->sortDirection = ($orderings['resource.filename'] === SupportsSortingInterface::ORDER_DESCENDING) ? 'descending' : 'ascending';
         }
 
         if (isset($orderings['lastModified'])) {
@@ -220,25 +192,29 @@ final class PixxioClient
             $options->sortDirection = ($orderings['lastModified'] === SupportsSortingInterface::ORDER_DESCENDING) ? 'descending' : 'ascending';
         }
 
-        $uri = new Uri( $this->apiEndpointUri . '/json/files');
-        $uri = $uri->withQuery(
-            'accessToken=' . $this->accessToken . '&' .
-            'options=' . \GuzzleHttp\json_encode($options)
-        );
-
-        $client = new Client($this->apiClientOptions);
-        try {
-            return $client->request('GET', $uri);
-        } catch (GuzzleException $e) {
-            throw new ConnectionException('Search failed: ' . $e->getMessage(), 1542808181);
-        }
+        $uri = (new Uri($this->apiEndpointUri . '/files'))->withQuery(http_build_query($options));
+        return $this->request('GET', $uri);
     }
 
     /**
-     * @return string
+     * @throws ConnectionException
+     * @throws AuthenticationFailedException
+     * @throws \JsonException
      */
-    public function getAccessToken(): string
+    private function request(string $method, Uri $uri): object
     {
-        return $this->accessToken;
+        try {
+            $response = $this->guzzleClient->request($method, $uri);
+            $result = json_decode($response->getBody()->getContents(), false, 512, JSON_THROW_ON_ERROR);
+            if ($result->success !== true) {
+                if ($response->getStatusCode() === 401 || $response->getStatusCode() === 403) {
+                    throw new AuthenticationFailedException($result->errorMessage, 1737726447);
+                }
+                throw new ConnectionException($result->errorMessage, 1737726800);
+            }
+            return $result;
+        } catch (GuzzleException $exception) {
+            throw new ConnectionException('Request failed: ' . $exception->getMessage(), 1737726691, $exception);
+        }
     }
 }

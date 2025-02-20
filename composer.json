@@ -4,6 +4,8 @@
   "name": "flownative/neos-pixxio",
   "license": "MIT",
   "require": {
+    "php": "^7.4",
+    "ext-json": "*",
     "neos/flow": "5.*",
     "neos/media": "4.*",
     "guzzlehttp/guzzle": "6.*",

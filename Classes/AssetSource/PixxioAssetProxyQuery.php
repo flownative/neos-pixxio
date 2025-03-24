@@ -24,17 +24,35 @@ use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
 
 final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
 {
-    private PixxioAssetSource $assetSource;
+    /**
+     * @var PixxioAssetSource
+     */
+    private $assetSource;
 
-    private string $searchTerm = '';
+    /**
+     * @var string
+     */
+    private $searchTerm = '';
 
-    private string $assetTypeFilter = 'All';
+    /**
+     * @var string
+     */
+    private $assetTypeFilter = 'All';
 
-    private array $orderings = [];
+    /**
+     * @var array
+     */
+    private $orderings = [];
 
-    private int $offset = 0;
+    /**
+     * @var int
+     */
+    private $offset = 0;
 
-    private int $limit = 30;
+    /**
+     * @var int
+     */
+    private $limit = 30;
 
     /**
      * @Inject

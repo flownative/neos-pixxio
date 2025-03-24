@@ -19,13 +19,25 @@ use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
 
 class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
 {
-    private PixxioAssetProxyQuery $query;
+    /**
+     * @var PixxioAssetProxyQuery
+     */
+    private $query;
 
-    private ?array $assetProxies = null;
+    /**
+     * @var array|null
+     */
+    private $assetProxies = null;
 
-    private ?int $numberOfAssetProxies = null;
+    /**
+     * @var int|null
+     */
+    private $numberOfAssetProxies = null;
 
-    private \ArrayIterator $assetProxiesIterator;
+    /**
+     * @var \ArrayIterator
+     */
+    private $assetProxiesIterator;
 
     public function __construct(PixxioAssetProxyQuery $query)
     {

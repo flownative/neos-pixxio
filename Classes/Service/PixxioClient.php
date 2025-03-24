@@ -26,18 +26,33 @@ use Neos\Media\Domain\Model\AssetSource\SupportsSortingInterface;
  */
 final class PixxioClient
 {
-    private Client $guzzleClient;
+    /**
+     * @var Client
+     */
+    private $guzzleClient;
 
-    private string $apiEndpointUri;
+    /**
+     * @var string
+     */
+    private $apiEndpointUri;
 
-    private array $imageOptions;
+    /**
+     * @var array
+     */
+    private $imageOptions;
 
-    private static array $fields = [
+    /**
+     * @var array
+     */
+    private static $fields = [
         'id', 'fileName', 'fileType', 'keywords', 'height', 'width', 'originalFileURL', 'subject', 'description',
         'modifyDate', 'fileSize', 'previewFileURL', 'modifiedPreviewFileURLs', 'importantMetadata'
     ];
 
-    private static array $defaultImageOptions = [
+    /**
+     * @var array
+     */
+    private static $defaultImageOptions = [
         'thumbnailUri' =>
             [
                 'width' => 400,

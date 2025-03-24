@@ -24,7 +24,7 @@ class PixxioCommandController extends CommandController
      * @Flow\InjectConfiguration(path="assetSources", package="Neos.Media")
      * @var array
      */
-    protected array $assetSourcesConfiguration = [];
+    protected $assetSourcesConfiguration = [];
 
     /**
      * Tag used assets

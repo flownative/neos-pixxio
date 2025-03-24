@@ -31,21 +31,30 @@ use Neos\Media\Domain\Model\Tag;
 
 class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, SupportsSortingInterface
 {
-    private PixxioAssetSource $assetSource;
+    /**
+     * @var PixxioAssetSource
+     */
+    private $assetSource;
 
-    public function __construct(PixxioAssetSource $assetSource)
-    {
-        $this->assetSource = $assetSource;
-    }
+    /**
+     * @var string
+     */
+    private $assetTypeFilter = 'All';
 
-    private string $assetTypeFilter = 'All';
-
-    private array $orderings = [];
+    /**
+     * @var array
+     */
+    private $orderings = [];
 
     /**
      * @var StringFrontend
      */
     protected $assetProxyCache;
+
+    public function __construct(PixxioAssetSource $assetSource)
+    {
+        $this->assetSource = $assetSource;
+    }
 
     /**
      * @throws AssetNotFoundExceptionInterface

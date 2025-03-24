@@ -23,9 +23,15 @@ use Neos\Utility\MediaTypes;
 
 class PixxioAssetSource implements AssetSourceInterface
 {
-    private string $assetSourceIdentifier;
+    /**
+     * @var string
+     */
+    private $assetSourceIdentifier;
 
-    private ?PixxioAssetProxyRepository $assetProxyRepository = null;
+    /**
+     * @var ?PixxioAssetProxyRepository
+     */
+    private $assetProxyRepository = null;
 
     /**
      * @Flow\Inject
@@ -33,23 +39,50 @@ class PixxioAssetSource implements AssetSourceInterface
      */
     protected $securityContext;
 
-    private string $apiEndpointUri;
+    /**
+     * @var string
+     */
+    private $apiEndpointUri;
 
-    private string $apiKey;
+    /**
+     * @var string
+     */
+    private $apiKey;
 
-    private array $apiClientOptions = [];
+    /**
+     * @var array
+     */
+    private $apiClientOptions = [];
 
-    private ?PixxioClient $pixxioClient = null;
+    /**
+     * @var PixxioClient|null
+     */
+    private $pixxioClient = null;
 
-    private array $imageOptions = [];
+    /**
+     * @var array
+     */
+    private $imageOptions = [];
 
-    private bool $autoTaggingEnable = false;
+    /**
+     * @var bool
+     */
+    private $autoTaggingEnable = false;
 
-    private string $autoTaggingInUseTag = 'used-by-neos';
+    /**
+     * @var string
+     */
+    private $autoTaggingInUseTag = 'used-by-neos';
 
-    private array $assetSourceOptions;
+    /**
+     * @var array
+     */
+    private $assetSourceOptions;
 
-    protected string $label = 'pixx.io';
+    /**
+     * @var string
+     */
+    protected $label = 'pixx.io';
 
 
     /**

@@ -34,35 +34,80 @@ use stdClass;
  */
 final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalInterface, SupportsIptcMetadataInterface
 {
-    private PixxioAssetSource $assetSource;
+    /**
+     * @var PixxioAssetSource
+     */
+    private $assetSource;
 
-    private string $identifier;
+    /**
+     * @var string
+     */
+    private  $identifier;
 
-    private string $label;
+    /**
+     * @var string
+     */
+    private $label;
 
-    private string $filename;
+    /**
+     * @var string
+     */
+    private $filename;
 
-    private \DateTime $lastModified;
+    /**
+     * @var \DateTime
+     */
+    private $lastModified;
 
-    private int $fileSize;
+    /**
+     * @var int
+     */
+    private $fileSize;
 
-    private string $mediaType;
+    /**
+     * @var string
+     */
+    private $mediaType;
 
-    private array $iptcProperties = [];
+    /**
+     * @var array
+     */
+    private $iptcProperties = [];
 
-    private UriInterface $thumbnailUri;
+    /**
+     * @var UriInterface
+     */
+    private $thumbnailUri;
 
-    private UriInterface $previewUri;
+    /**
+     * @var UriInterface
+     */
+    private $previewUri;
 
-    private UriInterface $scaledOriginalUri;
+    /**
+     * @var UriInterface
+     */
+    private $scaledOriginalUri;
 
-    private UriInterface $originalUri;
+    /**
+     * @var UriInterface
+     */
+    private $originalUri;
 
-    private ?int $widthInPixels;
+    /**
+     * @var int|null
+     */
+    private $widthInPixels;
 
-    private ?int $heightInPixels;
+    /**
+     * @var int|null
+     */
+    private $heightInPixels;
 
-    private array $tags = [];
+    /**
+     * @var array
+     */
+    private  $tags = [];
 
     /**
      * @Flow\Inject

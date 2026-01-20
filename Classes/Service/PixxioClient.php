@@ -237,12 +237,12 @@ final class PixxioClient
         }
 
         if (isset($orderings['resource.filename'])) {
-            $options->sortBy = 'fileName';
+            $options->sortby = 'fileName';
             $options->sortDirection = ($orderings['resource.filename'] === SupportsSortingInterface::ORDER_DESCENDING) ? 'descending' : 'ascending';
         }
 
         if (isset($orderings['lastModified'])) {
-            $options->sortBy = 'uploadDate';
+            $options->sortby = 'uploadDate';
             $options->sortDirection = ($orderings['lastModified'] === SupportsSortingInterface::ORDER_DESCENDING) ? 'descending' : 'ascending';
         }
 

@@ -91,7 +91,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
         return $this->limit;
     }
 
-    public function setSearchTerm(string $searchTerm)
+    public function setSearchTerm(string $searchTerm): void
     {
         $this->searchTerm = $searchTerm;
     }
@@ -101,7 +101,7 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
         return $this->searchTerm;
     }
 
-    public function setAssetTypeFilter(string $assetTypeFilter)
+    public function setAssetTypeFilter(string $assetTypeFilter): void
     {
         $this->assetTypeFilter = $assetTypeFilter;
     }

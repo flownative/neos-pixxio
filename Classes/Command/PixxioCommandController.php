@@ -54,25 +54,8 @@ class PixxioCommandController extends CommandController
 
         $iterator = $this->assetRepository->findAllIterator();
         foreach ($this->assetRepository->iterate($iterator) as $asset) {
-            if (!$asset instanceof Asset) {
-                continue;
-            }
-            if (!$asset instanceof AssetSourceAwareInterface) {
-                continue;
-            }
-            if ($asset->getAssetSourceIdentifier() !== $assetSourceIdentifier) {
-                continue;
-            }
-
-            try {
-                $assetProxy = $asset->getAssetProxy();
-            } catch (AccessToAssetDeniedException $exception) {
-                $this->outputLine('   error   %s', [$exception->getMessage()]);
-                continue;
-            }
-
-            if (!$assetProxy instanceof PixxioAssetProxy) {
-                $this->outputLine('   error   Asset "%s" (%s) could not be accessed via Pixxio-API', [$asset->getLabel(), $asset->getIdentifier()]);
+            $assetProxy = $this->getAssetProxyForAsset($asset, $assetSourceIdentifier);
+            if ($assetProxy === null) {
                 continue;
             }
 
@@ -126,25 +109,8 @@ class PixxioCommandController extends CommandController
         $assetsWereUpdated = false;
 
         foreach ($this->assetRepository->iterate($iterator) as $asset) {
-            if (!$asset instanceof Asset) {
-                continue;
-            }
-            if (!$asset instanceof AssetSourceAwareInterface) {
-                continue;
-            }
-            if ($asset->getAssetSourceIdentifier() !== $assetSourceIdentifier) {
-                continue;
-            }
-
-            try {
-                $assetProxy = $asset->getAssetProxy();
-            } catch (AccessToAssetDeniedException $exception) {
-                $this->outputLine('   error   %s', [$exception->getMessage()]);
-                continue;
-            }
-
-            if (!$assetProxy instanceof PixxioAssetProxy) {
-                $this->outputLine('   error   Asset "%s" (%s) could not be accessed via Pixxio-API', [$asset->getLabel(), $asset->getIdentifier()]);
+            $assetProxy = $this->getAssetProxyForAsset($asset, $assetSourceIdentifier);
+            if ($assetProxy === null) {
                 continue;
             }
 
@@ -184,5 +150,32 @@ class PixxioCommandController extends CommandController
             !$quiet && $this->outputLine('💡 You may want to run ./flow flow:cache:flushone Neos_Fusion');
             !$quiet && $this->outputLine('   in order to make changes visible in the frontend');
         }
+    }
+
+    private function getAssetProxyForAsset($asset, $assetSourceIdentifier)
+    {
+        if (!$asset instanceof AssetSourceAwareInterface) {
+            return null;
+        }
+        if (!$asset instanceof Asset) {
+            return null;
+        }
+        if ($asset->getAssetSourceIdentifier() !== $assetSourceIdentifier) {
+            return null;
+        }
+
+        try {
+            $assetProxy = $asset->getAssetProxy();
+        } catch (AccessToAssetDeniedException $exception) {
+            $this->outputLine('   error   %s', [$exception->getMessage()]);
+            return null;
+        }
+
+        if (!$assetProxy instanceof PixxioAssetProxy) {
+            $this->outputLine('   error   Asset "%s" (%s) could not be accessed via Pixxio-API', [$asset->getLabel(), $asset->getIdentifier()]);
+            return null;
+        }
+
+        return $assetProxy;
     }
 }

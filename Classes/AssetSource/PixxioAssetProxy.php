@@ -17,6 +17,7 @@ use Exception;
 use Flownative\Pixxio\Exception\ConnectionException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\Request;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Http\Uri;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
@@ -90,11 +91,6 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
     private $scaledOriginalUri;
 
     /**
-     * @var UriInterface
-     */
-    private $originalUri;
-
-    /**
      * @var int|null
      */
     private $widthInPixels;
@@ -148,8 +144,6 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
         if (isset($modifiedPreviewFileURLs[2])) {
             $assetProxy->scaledOriginalUri = new Uri($modifiedPreviewFileURLs[2]);
         }
-
-        $assetProxy->originalUri = new Uri($jsonObject->originalFileURL);
 
         return $assetProxy;
     }
@@ -242,12 +236,31 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
     {
         $mediaType = MediaTypes::getMediaTypeFromFilename(strtolower($this->filename));
         $assetSourceOptions = $this->getAssetSource()->getAssetSourceOptions();
-        $usePixxioThumbnailAsOriginal = (!isset($assetSourceOptions['mediaTypes'][$mediaType]) || $assetSourceOptions['mediaTypes'][$mediaType]['usePixxioThumbnailAsOriginal'] === false);
-        $importUri = $usePixxioThumbnailAsOriginal ? $this->scaledOriginalUri : $this->originalUri;
+
+        if (
+            isset($assetSourceOptions['mediaTypes'][$mediaType]['usePixxioThumbnailAsOriginal'])
+            && $assetSourceOptions['mediaTypes'][$mediaType]['usePixxioThumbnailAsOriginal'] === false
+        ) {
+            $importUri = (new Uri(sprintf('%s/files/%s/convert', rtrim($assetSourceOptions['apiEndpointUri'], '/'), $this->getIdentifier())))
+                ->withQuery(http_build_query([
+                    'downloadType' => 'original',
+                    'responseType' => 'binary'
+                ]));
+            $request = new Request(
+                'GET',
+                $importUri,
+                ['Authorization' => 'Bearer ' . $assetSourceOptions['apiKey']]
+            );
+        } else {
+            $request = new Request(
+                'GET',
+                $this->scaledOriginalUri
+            );
+        }
 
         $client = new Client($assetSourceOptions['apiClientOptions'] ?? []);
         try {
-            $response = $client->request('GET', $importUri);
+            $response = $client->send($request);
             if ($response->getStatusCode() === 200) {
                 return $response->getBody()->detach();
             }

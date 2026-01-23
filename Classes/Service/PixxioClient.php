@@ -45,7 +45,7 @@ final class PixxioClient
      * @var array
      */
     private static $fields = [
-        'id', 'fileName', 'fileType', 'keywords', 'height', 'width', 'originalFileURL', 'subject', 'description',
+        'id', 'fileName', 'fileType', 'keywords', 'height', 'width', 'subject', 'description',
         'modifyDate', 'fileSize', 'previewFileURL', 'modifiedPreviewFileURLs', 'importantMetadata'
     ];
 

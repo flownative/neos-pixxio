@@ -31,7 +31,7 @@ class PixxioAssetSource implements AssetSourceInterface
     /**
      * @var ?PixxioAssetProxyRepository
      */
-    private $assetProxyRepository = null;
+    private $assetProxyRepository;
 
     /**
      * @Flow\Inject
@@ -57,7 +57,7 @@ class PixxioAssetSource implements AssetSourceInterface
     /**
      * @var PixxioClient|null
      */
-    private $pixxioClient = null;
+    private $pixxioClient;
 
     /**
      * @var array

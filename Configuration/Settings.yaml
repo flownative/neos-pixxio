@@ -14,21 +14,16 @@ Neos:
           label: 'pixx.io'
 
           # The customer-specific endpoint URI pointing to the Pixx.io API:
-          # Example: 'https://flownative.pixxio.media/cgi-bin/api/pixxio-api.pl'
+          # Example: 'https://acme.pixxio.media/api/v1'
           apiEndpointUri: ''
 
           # The API key of this Pixx.io integration.
-          # Please get in touch with Pixx.io support in order to get this key.
           apiKey: ''
 
           # Options for the Guzzle HTTP Client as specified here
           # see http://docs.guzzlephp.org/en/6.5/request-options.html
           # Use this to configure custom certificates or to disable cert verification
           apiClientOptions: {}
-
-          # A pixx.io user refresh token which is shared across all editors in
-          # this Neos installation.
-          # sharedRefreshToken: ''
 
           # Additional configuration for specific media types
           mediaTypes:

@@ -128,7 +128,7 @@ final class PixxioClient
                 $uri,
                 [
                     'form_params' => [
-                        'options' => json_encode($options)
+                        'options' => json_encode($options, JSON_THROW_ON_ERROR)
                     ]
                 ]
             );

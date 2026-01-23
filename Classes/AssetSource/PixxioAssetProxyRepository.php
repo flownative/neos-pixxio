@@ -14,7 +14,6 @@ namespace Flownative\Pixxio\AssetSource;
  */
 
 use Exception;
-use Flownative\Pixxio\Exception\AccessToAssetDeniedException;
 use Flownative\Pixxio\Exception\AssetNotFoundException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;

@@ -27,12 +27,12 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
     /**
      * @var array|null
      */
-    private $assetProxies = null;
+    private $assetProxies;
 
     /**
      * @var int|null
      */
-    private $numberOfAssetProxies = null;
+    private $numberOfAssetProxies;
 
     /**
      * @var \ArrayIterator
@@ -91,7 +91,7 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
 
     }
 
-    public function valid()
+    public function valid(): bool
     {
         $this->initialize();
         return $this->assetProxiesIterator->valid();
@@ -103,7 +103,7 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
         $this->assetProxiesIterator->rewind();
     }
 
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         $this->initialize();
         return $this->assetProxiesIterator->offsetExists($offset);

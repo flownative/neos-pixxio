@@ -169,7 +169,7 @@ class PixxioCommandController extends CommandController
 
             if ($newCopyrightNotice !== $asset->getCopyrightNotice()) {
                 !$quiet && $this->outputLine('      <success>New copyright:   %s</success>', [$newCopyrightNotice]);
-                $asset->setTitle($newCopyrightNotice);
+                $asset->setCopyrightNotice($newCopyrightNotice);
                 $assetModified = true;
             }
 

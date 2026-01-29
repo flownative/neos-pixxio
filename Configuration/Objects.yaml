@@ -7,6 +7,13 @@ Flownative\Pixxio\AssetSource\PixxioAssetProxyRepository:
         arguments:
           1:
             value: Flownative_Pixxio_AssetProxy
+    directoriesCache:
+      object:
+        factoryObjectName: Neos\Flow\Cache\CacheManager
+        factoryMethodName: getCache
+        arguments:
+          1:
+            value: Flownative_Pixxio_Directories
 
 Flownative\Pixxio\AssetSource\PixxioAssetProxyQuery:
   properties:

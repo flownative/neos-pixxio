@@ -19,6 +19,7 @@ use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
 use Neos\Cache\Exception as CacheException;
 use Neos\Cache\Frontend\StringFrontend;
+use Neos\Cache\Frontend\VariableFrontend;
 use Neos\Flow\ObjectManagement\DependencyInjection\DependencyProxy;
 use Neos\Media\Domain\Model\AssetCollection;
 use Neos\Media\Domain\Model\AssetSource\AssetNotFoundExceptionInterface;
@@ -33,15 +34,19 @@ use Neos\Media\Domain\Model\Tag;
 
 class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, SupportsSortingInterface, SupportsCollectionsInterface
 {
+    private const string CACHE_IDENTIFIER_DIRECTORIES_BY_PATH = 'pixxio-directories-by-path';
+
     private PixxioAssetSource $assetSource;
 
-    protected ?string $assetCollectionFilter;
+    protected ?int $directoryFilter;
 
     private string $assetTypeFilter = 'All';
 
     private array $orderings = [];
 
     protected null|StringFrontend|DependencyProxy $assetProxyCache = null;
+
+    protected null|VariableFrontend|DependencyProxy $directoriesCache = null;
 
     public function __construct(PixxioAssetSource $assetSource)
     {
@@ -85,14 +90,28 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
 
     public function filterByCollection(AssetCollection $assetCollection = null): void
     {
-        $this->assetCollectionFilter = $assetCollection?->getTitle();
+        if ($assetCollection === null) {
+            $this->directoryFilter = null;
+            return;
+        }
+
+        $directories = $this->directoriesCache->get(self::CACHE_IDENTIFIER_DIRECTORIES_BY_PATH);
+        if ($directories === false || !isset($directories[$assetCollection->getTitle()])) {
+            $rawDirectories = $this->assetSource->getPixxioClient()->getDirectories();
+            foreach ($rawDirectories as $directory) {
+                $directories[ltrim($directory->path, '/')] = $directory;
+            }
+            $this->directoriesCache->set(self::CACHE_IDENTIFIER_DIRECTORIES_BY_PATH, $directories);
+        }
+
+        $this->directoryFilter = $directories[$assetCollection->getTitle()]->id;
     }
 
     public function findAll(): AssetProxyQueryResultInterface
     {
         $query = new PixxioAssetProxyQuery($this->assetSource);
         $query->setAssetTypeFilter($this->assetTypeFilter);
-        $query->setAssetCollectionFilter($this->assetCollectionFilter);
+        $query->setDirectoryFilter($this->directoryFilter);
         $query->setOrderings($this->orderings);
         return new PixxioAssetProxyQueryResult($query);
     }
@@ -102,7 +121,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         $query = new PixxioAssetProxyQuery($this->assetSource);
         $query->setSearchTerm($searchTerm);
         $query->setAssetTypeFilter($this->assetTypeFilter);
-        $query->setAssetCollectionFilter($this->assetCollectionFilter);
+        $query->setDirectoryFilter($this->directoryFilter);
         $query->setOrderings($this->orderings);
         return new PixxioAssetProxyQueryResult($query);
     }
@@ -112,7 +131,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         $query = new PixxioAssetProxyQuery($this->assetSource);
         $query->setSearchTerm($tag->getLabel());
         $query->setAssetTypeFilter($this->assetTypeFilter);
-        $query->setAssetCollectionFilter($this->assetCollectionFilter);
+        $query->setDirectoryFilter($this->directoryFilter);
         $query->setOrderings($this->orderings);
         return new PixxioAssetProxyQueryResult($query);
     }
@@ -121,7 +140,7 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
     {
         $query = new PixxioAssetProxyQuery($this->assetSource);
         $query->setAssetTypeFilter($this->assetTypeFilter);
-        $query->setAssetCollectionFilter($this->assetCollectionFilter);
+        $query->setDirectoryFilter($this->directoryFilter);
         $query->setOrderings($this->orderings);
         return new PixxioAssetProxyQueryResult($query);
     }

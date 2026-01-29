@@ -15,8 +15,8 @@ class PixxioCommandControllerTest extends UnitTestCase
 {
     protected static array $assetSourceOptions = [
         'mapping' => [
-            'categoriesMaximumDepth' => 2,
-            'categories' => [
+            'directoriesMaximumDepth' => 2,
+            'directories' => [
                 'home*' => ['asAssetCollection' => false],
                 'Kunde A*' => ['asAssetCollection' => false],
                 '*' => ['asAssetCollection' => true]

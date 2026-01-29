@@ -207,13 +207,13 @@ iterates over all assets which were imported from pixx.io and checks if tags nee
 
 ---
 
-### Category mapping from pixx.io to Neos
+### Directory mapping from pixx.io to Neos
 
-pixx.io offers categories to organize assets in a folder-like structure. Those
-can be mapped to asset collections and tags in Neos, to make them visible for
-the  users.
+pixx.io offers directories to organize assets in a folder structure. Those can
+be mapped to asset collections and tags in Neos, to make them visible for  the
+users.
 
-The configuration for the category import looks like this:
+The configuration for the directory import looks like this:
 
 ```yaml
 Neos:
@@ -223,29 +223,29 @@ Neos:
         assetSourceOptions:
           mapping:
             # map "categories" from pixx.io to Neos
-            categoriesMaximumDepth: 2         # only include the first two levels of categories (10 is default)
-            categories:
+            directoriesMaximumDepth: 2         # only include the first two levels of directories (10 is default)
+            directories:
               'People/Employees':
-                asAssetCollection: false      # ignore this category, put more specific patterns first
+                asAssetCollection: false      # ignore this directory, put more specific patterns first
               'People*':                      # the category "path" in pixx.io, shell-style globbing is supported
                 asAssetCollection: true       # map to an asset collection named after the category
 ```
 
-- The key used is the category identifier from pixx.io as used in the API, without leading slash
-- `asAssetCollection` set to `true` exposes the category as an asset collection named like the category.
+- The key used is the directory path as used in the pixx.io API
+- `asAssetCollection` set to `true` exposes the directory as an asset collection named like the directory.
 
 Afterwards, run the following command to update the asset collections, ideally
 in a cronjob to keep things up-to-date:
 
 ```bash
-./flow pixxio:importcategoriesascollections --asset-source acme-pixxio
+./flow pixxio:importdirectoriesascollections --asset-source acme-pixxio
 ```
 
-To check what a given category would import, you can use a verbose dry-run:
+To check what a given configuration would import, you can use a verbose dry-run:
 
 ```bash
-$ ./flow pixxio:importcategoriesascollections --asset-source acme-pixxio --quiet 0 --dry-run 1
-Importing categories as asset collections via pixx.io API
+$ ./flow pixxio:importdirectoriesascollections --asset-source acme-pixxio --quiet 0 --dry-run 1
+Importing directories as asset collections via pixx.io API
 o Dokumentation
 = Kunde A
 = Kunde A/Projekt 1

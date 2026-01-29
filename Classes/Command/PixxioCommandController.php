@@ -203,7 +203,7 @@ class PixxioCommandController extends CommandController
      */
     public function importCategoriesAsCollectionsCommand(string $assetSource, bool $quiet = true, bool $dryRun = false): void
     {
-        !$quiet && $this->outputLine('<b>Importing categories as asset collections via pixx.io API</b>');
+        !$quiet && $this->outputLine('<b>Importing directories as asset collections via pixx.io API</b>');
 
         try {
             /** @var PixxioAssetSource $pixxioAssetSource */
@@ -214,53 +214,52 @@ class PixxioCommandController extends CommandController
             $this->quit(1);
         }
 
-        $response = $pixxioClient->getCategories();
-        $responseObject = Utils::jsonDecode($response->getBody()->getContents());
-        foreach ($responseObject->categories as $categoryPath) {
-            $categoryPath = ltrim($categoryPath, '/');
-            if ($this->shouldBeImportedAsAssetCollection($pixxioAssetSource, $categoryPath)) {
-                $assetCollection = $this->assetCollectionRepository->findOneByTitle($categoryPath);
+        $response = $pixxioClient->getDirectories();
+        foreach ($response as $directoryData) {
+            $directoryPath = ltrim($directoryData->path, '/');
+            if ($this->shouldBeImportedAsAssetCollection($pixxioAssetSource, $directoryPath)) {
+                $assetCollection = $this->assetCollectionRepository->findOneByTitle($directoryPath);
 
                 if ($assetCollection instanceof AssetCollection) {
-                    !$quiet && $this->outputLine('= %s', [$categoryPath]);
+                    !$quiet && $this->outputLine('= %s', [$directoryPath]);
                 } else {
                     if (!$dryRun) {
-                        $assetCollection = new AssetCollection($categoryPath);
+                        $assetCollection = new AssetCollection($directoryPath);
                         $this->assetCollectionRepository->add($assetCollection);
                     }
-                    !$quiet && $this->outputLine('+ %s', [$categoryPath]);
+                    !$quiet && $this->outputLine('+ %s', [$directoryPath]);
                 }
             } else {
-                !$quiet && $this->outputLine('o %s', [$categoryPath]);
+                !$quiet && $this->outputLine('o %s', [$directoryPath]);
             }
         }
 
         !$quiet && $this->outputLine('<success>Import done.</success>');
     }
 
-    public function shouldBeImportedAsAssetCollection(PixxioAssetSource $assetSource, string $categoryPath): bool
+    public function shouldBeImportedAsAssetCollection(PixxioAssetSource $assetSource, string $directoryPath): bool
     {
-        $categoriesMapping = $assetSource->getAssetSourceOptions()['mapping']['categories'];
-        if (empty($categoriesMapping)) {
-            $this->outputLine('<error>No categories configured for mapping</error>');
+        $directoriesMapping = $assetSource->getAssetSourceOptions()['mapping']['directories'];
+        if (empty($directoriesMapping)) {
+            $this->outputLine('<error>No directories configured for mapping</error>');
             $this->quit(1);
         }
 
-        $categoryPath = ltrim($categoryPath, '/');
+        $directoryPath = ltrim($directoryPath, '/');
 
         // depth limit
-        if (substr_count($categoryPath, '/') >= $assetSource->getAssetSourceOptions()['mapping']['categoriesMaximumDepth']) {
+        if (substr_count($directoryPath, '/') >= $assetSource->getAssetSourceOptions()['mapping']['directoriesMaximumDepth']) {
             return false;
         }
 
         // full match
-        if (array_key_exists($categoryPath, $categoriesMapping)) {
-            return $categoriesMapping[$categoryPath]['asAssetCollection'];
+        if (array_key_exists($directoryPath, $directoriesMapping)) {
+            return $directoriesMapping[$directoryPath]['asAssetCollection'];
         }
 
         // glob match
-        foreach ($categoriesMapping as $mappedCategory => $mapping) {
-            if (fnmatch($mappedCategory, $categoryPath)) {
+        foreach ($directoriesMapping as $mappedCategory => $mapping) {
+            if (fnmatch($mappedCategory, $directoryPath)) {
                 return $mapping['asAssetCollection'];
             }
         }

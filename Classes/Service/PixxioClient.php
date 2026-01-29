@@ -20,9 +20,7 @@ use Flownative\Pixxio\Exception\Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Uri;
-use GuzzleHttp\Utils;
 use Neos\Media\Domain\Model\AssetSource\SupportsSortingInterface;
-use Psr\Http\Message\ResponseInterface;
 
 /**
  * Pixx.io API client
@@ -140,7 +138,7 @@ final class PixxioClient
      * @throws ConnectionException
      * @throws \JsonException
      */
-    public function search(string $queryExpression, string $formatType, array $fileTypes, string $assetCollectionFilter = null, int $offset = 0, int $limit = 50, array $orderings = []): object
+    public function search(string $queryExpression, string $formatType, array $fileTypes, int $directoryFilter = null, int $offset = 0, int $limit = 50, array $orderings = []): object
     {
         $options = new \stdClass();
         $options->pageSize = $limit;
@@ -148,11 +146,11 @@ final class PixxioClient
         $options->previewFileOptions = json_encode($this->imageOptions, JSON_THROW_ON_ERROR);
         $options->responseFields = json_encode(self::$fields, JSON_THROW_ON_ERROR);
 
-        if ($assetCollectionFilter !== null) {
-            $options->category = 'sub/' . $assetCollectionFilter;
-        }
-
         $filters = [];
+
+        if ($directoryFilter !== null) {
+            $filters[] = ['filterType' => 'directory', 'directoryID' => $directoryFilter];
+        }
         if ($formatType !== '') {
             $filters[] = ['filterType' => 'fileType', 'fileType' => $formatType];
         }
@@ -215,19 +213,26 @@ final class PixxioClient
     }
 
     /**
-     * @return ResponseInterface
+     * @throws AuthenticationFailedException
      * @throws ConnectionException
+     * @throws \JsonException
      */
-    public function getCategories(): ResponseInterface
+    public function getDirectories(): array
     {
-        $uri = new Uri( $this->apiEndpointUri . '/json/categories');
+        $options = new \stdClass();
+        $options->responseFields = json_encode(['id', 'name', 'parentID', 'path'], JSON_THROW_ON_ERROR);
+        $options->pageSize = 20;
+        $options->page = 1;
 
-        $client = new Client($this->apiClientOptions);
-        try {
-            return $client->request('GET', $uri);
-        } catch (GuzzleException $exception) {
-            throw new ConnectionException('Retrieving categories failed: ' . $exception->getMessage(), 1642430939);
-        }
+        $directories = [];
+        do {
+            $uri = (new Uri( $this->apiEndpointUri . '/directories'))->withQuery(http_build_query($options));
+            $response = $this->request('GET', $uri);
+            $directories[] = $response->directories;
+            $options->page++;
+        } while ($response->directories !== []);
+
+        return array_merge(...$directories);
     }
 
     /**

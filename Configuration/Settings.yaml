@@ -24,10 +24,10 @@ Flownative:
           enable: false
           inUseTag: 'used-by-neos'
 
-        # map "categories" from pixx.io to Neos
+        # map directories from pixx.io to Neos
         mapping:
-          categoriesMaximumDepth: 10
-          categories: []
+          directoriesMaximumDepth: 10
+          directories: []
 
         # Image options, are the formats returned for use in the asset properties "thumbnailUri", "previewUri" and "originalUri"
         # imageOptions parameter are described here: https://tutorial.pixxio.cloud/cgi-bin/api/pixxio-api.pl/documentation/generalInformation/imageOptions

@@ -3,3 +3,9 @@ Flownative_Pixxio_AssetProxy:
   backend: Neos\Cache\Backend\FileBackend
   backendOptions:
     defaultLifetime: 60
+
+Flownative_Pixxio_Directories:
+  frontend: Neos\Cache\Frontend\VariableFrontend
+  backend: Neos\Cache\Backend\FileBackend
+  backendOptions:
+    defaultLifetime: 0

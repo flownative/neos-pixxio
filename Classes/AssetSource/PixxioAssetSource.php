@@ -14,16 +14,9 @@ namespace Flownative\Pixxio\AssetSource;
  * source code.
  */
 
-use Flownative\Pixxio\Domain\Model\ClientSecret;
-use Flownative\Pixxio\Domain\Repository\ClientSecretRepository;
-use Flownative\Pixxio\Exception\AuthenticationFailedException;
-use Flownative\Pixxio\Exception\MissingClientSecretException;
 use Flownative\Pixxio\Service\PixxioClient;
-use Flownative\Pixxio\Service\PixxioServiceFactory;
 use GuzzleHttp\Psr7\Uri;
 use Neos\Flow\Annotations as Flow;
-use Neos\Flow\Security\Account;
-use Neos\Flow\Security\Context;
 use Neos\Flow\ResourceManagement\ResourceManager;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyRepositoryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceInterface;
@@ -32,20 +25,6 @@ use Neos\Utility\MediaTypes;
 
 class PixxioAssetSource implements AssetSourceInterface
 {
-    /**
-     * @Flow\Inject
-     */
-    protected PixxioServiceFactory $pixxioServiceFactory;
-
-    /**
-     * @Flow\Inject
-     */
-    protected ClientSecretRepository $clientSecretRepository;
-
-    /**
-     * @Flow\Inject
-     */
-    protected Context $securityContext;
 
     /**
      * @Flow\Inject
@@ -127,12 +106,6 @@ class PixxioAssetSource implements AssetSourceInterface
                         throw new \InvalidArgumentException(sprintf('Invalid image options specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1591605349);
                     }
                     $this->imageOptions = $optionValue;
-                    break;
-                case 'sharedRefreshToken':
-                    if (!is_string($optionValue) || empty($optionValue)) {
-                        throw new \InvalidArgumentException(sprintf('Invalid shared refresh token specified for pixx.io asset source %s', $this->assetSourceIdentifier), 1528806843);
-                    }
-                    $this->sharedRefreshToken = $optionValue;
                 break;
                 case 'mediaTypes':
                     if (!is_array($optionValue)) {
@@ -235,43 +208,17 @@ class PixxioAssetSource implements AssetSourceInterface
         return $this->autoTaggingInUseTag;
     }
 
-    /**
-     * @throws MissingClientSecretException
-     * @throws AuthenticationFailedException
-     */
     public function getPixxioClient(): PixxioClient
     {
         if ($this->pixxioClient === null) {
-
-            if ($this->securityContext->isInitialized() && $this->securityContext->getAccount()) {
-                $account = $this->securityContext->getAccount();
-                $clientSecret = $this->clientSecretRepository->findOneByIdentifiers($this->assetSourceIdentifier, $account->getAccountIdentifier());
-            } else {
-                $clientSecret = null;
-                $account = new Account();
-                $account->setAccountIdentifier('shared');
-            }
-
-            if (!empty($this->sharedRefreshToken) && ($clientSecret === null || $clientSecret->getRefreshToken() === '')) {
-                $clientSecret = new ClientSecret();
-                $clientSecret->setRefreshToken($this->sharedRefreshToken);
-                $clientSecret->setAssetSourceIdentifier($this->assetSourceIdentifier);
-                $clientSecret->setFlowAccountIdentifier('shared');
-            }
-
-            if ($clientSecret === null || $clientSecret->getRefreshToken() === '') {
-                throw new MissingClientSecretException(sprintf('No client secret found for account %s. Please set up the pixx.io plugin with the correct credentials.', $account->getAccountIdentifier()), 1526544548);
-            }
-
-            $this->pixxioClient = $this->pixxioServiceFactory->createForAccount(
+            $this->pixxioClient = new PixxioClient(
                 $this->apiEndpointUri,
                 $this->apiKey,
                 $this->apiClientOptions,
                 $this->imageOptions
             );
-
-            $this->pixxioClient->authenticate($clientSecret->getRefreshToken());
         }
+
         return $this->pixxioClient;
     }
 

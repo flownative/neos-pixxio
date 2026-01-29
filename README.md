@@ -14,7 +14,6 @@ pictures, graphics and video files easier. pixx.io is safe, efficient and easy t
 
 ## Key Features
 
-- authentication setup via own backend module
 - seamless integration into the Neos media browser
 - automatic import and clean up of media assets from pixx.io
 
@@ -35,11 +34,10 @@ After installation you need to run database migrations:
 
 ## Enabling pixx.io API access
 
-The API access is configured by three components:
+The API access is configured by two components:
 
-1. a setting which contains the customer-specific service endpoint URL
-2. a setting providing the pixx.io API key
-3. a setting providing a shared pixx.io user refresh token
+1. a setting which contains the customer-specific service endpoint URL (`https://<your-mediaspace-url>/api/v1`)
+2. a setting providing the pixx.io API key, which can be obtained from within your Mediaspace (Settings → API → API-Key → Generate)
 
 **To get the needed values for API endpoint and API key, please contact your pixx.io support contact.**
 
@@ -53,19 +51,12 @@ Neos:
       'acme-pixxio':
         assetSource: 'Flownative\Pixxio\AssetSource\PixxioAssetSource'
         assetSourceOptions:
-          apiEndpointUri: 'https://acme.pixxio.media/cgi-bin/api/pixxio-api.pl'
+          apiEndpointUri: 'https://acme.pixxio.media/api/v1'
           apiKey: 'abcdef123456789'
-          sharedRefreshToken: 'A3ZezMq6Q24X314xbaiq5ewNE5q4Gt'
 ```
 
-When you committed and deployed these changes, you can log in to the Neos backend and navigate to the pixx.io backend
-module to verify your settings.
-
-If you would like a separate pixx.io user for the logged in Neos user, you can copy and paste your own "refresh token"
-into the form found in the backend module and store it along with your Neos user.
-
-When everything works out fine, Neos will report that the connection was successful (and if not, you'll see an error
-message with further details).
+When you committed and deployed these changes, you can log in to the Neos backend and navigate to the pixx.io asset
+source in the media management.
 
 ## Additional configuration options
 
@@ -110,8 +101,8 @@ Neos:
 
 ### Custom API client options
 
-Sometimes the API Client needs additional configuration for the tls connection like custom timeouts or certificates.
-See: http://docs.guzzlephp.org/en/6.5/request-options.html
+Sometimes the API Client needs additional configuration for the TLS connection like custom timeouts or certificates.
+See: http://docs.guzzlephp.org/en/stable/request-options.html
 
 ```yaml
 Neos:

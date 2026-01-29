@@ -57,14 +57,3 @@ Neos:
       routes:
         'Flownative.Pixxio':
           position: 'after Neos.Neos'
-
-  Neos:
-    modules:
-      management:
-        submodules:
-          flownativePixxio:
-            controller: \Flownative\Pixxio\Controller\PixxioController
-            label: 'pixx.io'
-            description: 'Flownative.Pixxio:Main:moduleDescription'
-            icon: 'icon-photo'
-            privilegeTarget: 'Flownative.Pixxio:ManageConnection'

@@ -14,12 +14,9 @@ namespace Flownative\Pixxio\AssetSource;
  * source code.
  */
 
-use Flownative\Pixxio\Exception\AccessToAssetDeniedException;
 use Flownative\Pixxio\Exception\AssetNotFoundException;
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
-use Flownative\Pixxio\Exception\MissingClientSecretException;
-use GuzzleHttp\Utils;
 use Neos\Cache\Exception as CacheException;
 use Neos\Cache\Frontend\StringFrontend;
 use Neos\Flow\ObjectManagement\DependencyInjection\DependencyProxy;
@@ -34,9 +31,6 @@ use Neos\Media\Domain\Model\AssetSource\SupportsCollectionsInterface;
 use Neos\Media\Domain\Model\AssetSource\SupportsSortingInterface;
 use Neos\Media\Domain\Model\Tag;
 
-/**
- * PixxioAssetProxyRepository
- */
 class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, SupportsSortingInterface, SupportsCollectionsInterface
 {
     private PixxioAssetSource $assetSource;
@@ -57,7 +51,6 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
     /**
      * @throws AssetNotFoundExceptionInterface
      * @throws AssetSourceConnectionExceptionInterface
-     * @throws MissingClientSecretException
      * @throws AuthenticationFailedException
      * @throws AssetNotFoundException
      * @throws ConnectionException
@@ -71,24 +64,18 @@ class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, Suppo
         $cacheEntry = $this->assetProxyCache->get($cacheEntryIdentifier);
 
         if ($cacheEntry) {
-            $responseObject = Utils::jsonDecode($cacheEntry);
-        } else {
-            $response = $client->getFile($identifier);
-            $responseObject = Utils::jsonDecode($response->getBody()->getContents());
-
-            if (!$responseObject instanceof \stdClass) {
-                throw new AssetNotFoundException('Asset not found', 1526636260);
-            }
-            if (!isset($responseObject->success) || $responseObject->success !== 'true') {
-                throw match ($responseObject->status) {
-                    403 => new AccessToAssetDeniedException(sprintf('Failed retrieving asset: %s', $response->help ?? '-'), 1589815740),
-                    default => new AssetNotFoundException(sprintf('Failed retrieving asset, unexpected API response: %s', $response->help ?? '-'), 1589354288),
-                };
-            }
-
-            $this->assetProxyCache->set($cacheEntryIdentifier, Utils::jsonEncode($responseObject, JSON_FORCE_OBJECT));
+            $cachedObject = json_decode($cacheEntry, false, 512, JSON_THROW_ON_ERROR);
+            return PixxioAssetProxy::fromJsonObject($cachedObject, $this->assetSource);
         }
-        return PixxioAssetProxy::fromJsonObject($responseObject, $this->assetSource);
+
+        $responseObject = $client->getFile($identifier);
+
+        if (!isset($responseObject->success) || $responseObject->success !== true) {
+            throw new AssetNotFoundException(sprintf('Failed retrieving asset, unexpected API response: %s', $response->errorMessage ?? '-'), 1589354288);
+        }
+
+        $this->assetProxyCache->set($cacheEntryIdentifier, json_encode($responseObject->file, JSON_THROW_ON_ERROR));
+        return PixxioAssetProxy::fromJsonObject($responseObject->file, $this->assetSource);
     }
 
     public function filterByType(AssetTypeFilter $assetType = null): void

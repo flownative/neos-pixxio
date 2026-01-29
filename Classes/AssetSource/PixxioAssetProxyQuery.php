@@ -16,19 +16,16 @@ namespace Flownative\Pixxio\AssetSource;
 
 use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
-use Flownative\Pixxio\Exception\MissingClientSecretException;
-use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Utils;
+use Flownative\Pixxio\Exception\Exception;
+use Neos\Cache\Frontend\StringFrontend;
 use Neos\Flow\Annotations\Inject;
 use Neos\Flow\Log\ThrowableStorageInterface;
 use Neos\Flow\Log\Utility\LogEnvironment;
+use Neos\Flow\ObjectManagement\DependencyInjection\DependencyProxy;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
 use Psr\Log\LoggerInterface;
 
-/**
- *
- */
 final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
 {
     private PixxioAssetSource $assetSource;
@@ -45,8 +42,6 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
 
     private int $limit = 30;
 
-    private string $parentFolderIdentifier = '';
-
     /**
      * @Inject
      */
@@ -56,6 +51,8 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
      * @Inject
      */
     protected ThrowableStorageInterface $throwableStorage;
+
+    protected null|StringFrontend|DependencyProxy $assetProxyCache = null;
 
     public function __construct(PixxioAssetSource $assetSource)
     {
@@ -122,16 +119,6 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
         $this->orderings = $orderings;
     }
 
-    public function getParentFolderIdentifier(): string
-    {
-        return $this->parentFolderIdentifier;
-    }
-
-    public function setParentFolderIdentifier(string $parentFolderIdentifier): void
-    {
-        $this->parentFolderIdentifier = $parentFolderIdentifier;
-    }
-
     public function execute(): AssetProxyQueryResultInterface
     {
         return new PixxioAssetProxyQueryResult($this);
@@ -141,22 +128,16 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
     {
         try {
             $response = $this->sendSearchRequest(1, []);
-            $responseObject = Utils::jsonDecode($response->getBody()->getContents());
-
-            if (!isset($responseObject->quantity)) {
-                if (isset($responseObject->help)) {
-                    $message = $this->throwableStorage->logThrowable(new ConnectionException('Query to pixx.io failed: ' . $responseObject->help, 1526629493));
+            if (!isset($response->quantity)) {
+                if (isset($response->errorMessage)) {
+                    $message = $this->throwableStorage->logThrowable(new ConnectionException('Query to pixx.io failed: ' . $response->errorMessage, 1526629493));
                     $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
                 }
                 return 0;
             }
-            return (int)$responseObject->quantity;
+            return (int)$response->quantity;
         } catch (AuthenticationFailedException $exception) {
             $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1526629541, $exception));
-            $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
-            return 0;
-        } catch (MissingClientSecretException $exception) {
-            $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1526629547, $exception));
             $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
             return 0;
         } catch (ConnectionException $exception) {
@@ -174,22 +155,29 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
     {
         try {
             $assetProxies = [];
-            $response = $this->sendSearchRequest($this->limit, $this->orderings);
-            $responseObject = Utils::jsonDecode($response->getBody()->getContents());
+            $responseObject = $this->sendSearchRequest($this->limit, $this->orderings);
 
             if (!isset($responseObject->files)) {
                 return [];
             }
             foreach ($responseObject->files as $rawAsset) {
-                $assetProxies[] = PixxioAssetProxy::fromJsonObject($rawAsset, $this->assetSource);
+                $cacheEntryIdentifier = sha1((string)$rawAsset->id);
+                $cacheEntry = $this->assetProxyCache->get($cacheEntryIdentifier);
+
+                if ($cacheEntry) {
+                    $cachedObject = json_decode($cacheEntry, false, 512, JSON_THROW_ON_ERROR);
+                    $this->logger->debug('Cache HIT for ' . $cacheEntryIdentifier);
+                    $assetProxies[] = PixxioAssetProxy::fromJsonObject($cachedObject, $this->assetSource);
+                } else {
+                    $this->logger->debug('Cache MISS for ' . $cacheEntryIdentifier);
+                    $this->assetProxyCache->set($cacheEntryIdentifier, json_encode($rawAsset, JSON_THROW_ON_ERROR));
+
+                    $assetProxies[] = PixxioAssetProxy::fromJsonObject($rawAsset, $this->assetSource);
+                }
             }
-        } catch (AuthenticationFailedException $exception) {
-            $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1643822709, $exception));
-            $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
-            return [];
-        } catch (MissingClientSecretException $exception) {
-            $message = $this->throwableStorage->logThrowable(new ConnectionException('Connection to pixx.io failed.', 1643822727, $exception));
-            $this->logger->error($message, LogEnvironment::fromMethodName(__METHOD__));
+        } catch (Exception $exception) {
+            $message = $this->throwableStorage->logThrowable(new Exception('Request to pixx.io failed.', 1643822709, $exception));
+            $this->logger->error($message);
             return [];
         }
         return $assetProxies;
@@ -197,37 +185,28 @@ final class PixxioAssetProxyQuery implements AssetProxyQueryInterface
 
     /**
      * @throws AuthenticationFailedException
-     * @throws MissingClientSecretException
      * @throws ConnectionException
+     * @throws \JsonException
      */
-    private function sendSearchRequest(int $limit, array $orderings): Response
+    private function sendSearchRequest(int $limit, array $orderings): object
     {
-        $searchTerm = $this->searchTerm;
-
+        $formatType = '';
+        $fileTypes = [];
         switch ($this->assetTypeFilter) {
             case 'Image':
-                $formatTypes = ['image'];
-                $fileTypes = [];
-            break;
+                $formatType = 'image';
+                break;
             case 'Video':
-                $formatTypes = ['video'];
-                $fileTypes = [];
-            break;
+                $formatType = 'video';
+                break;
             case 'Audio':
-                $formatTypes = ['audio'];
-                $fileTypes = [];
-            break;
+                $formatType = 'audio';
+                break;
             case 'Document':
-                $formatTypes = [];
-                $fileTypes = ['pdf'];
-            break;
-            case 'All':
-            default:
-                $formatTypes = ['converted'];
-                $fileTypes = [];
-            break;
+                $fileTypes[] = '.pdf';
+                break;
         }
 
-        return $this->assetSource->getPixxioClient()->search($searchTerm, $formatTypes, $fileTypes, $this->assetCollectionFilter, $this->offset, $limit, $orderings);
+        return $this->assetSource->getPixxioClient()->search($this->searchTerm, $formatType, $fileTypes, $this->assetCollectionFilter, $this->offset, $limit, $orderings);
     }
 }

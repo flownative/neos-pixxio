@@ -7,9 +7,7 @@ use Flownative\Pixxio\AssetSource\PixxioAssetProxy;
 use Flownative\Pixxio\AssetSource\PixxioAssetProxyRepository;
 use Flownative\Pixxio\AssetSource\PixxioAssetSource;
 use Flownative\Pixxio\Exception\AccessToAssetDeniedException;
-use Flownative\Pixxio\Exception\AuthenticationFailedException;
 use Flownative\Pixxio\Exception\ConnectionException;
-use Flownative\Pixxio\Exception\MissingClientSecretException;
 use GuzzleHttp\Utils;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
@@ -79,17 +77,9 @@ class PixxioCommandController extends CommandController
         $assetSourceIdentifier = $assetSource;
         !$quiet && $this->outputLine('<b>Tagging used assets of asset source "%s" via Pixxio API:</b>', [$assetSourceIdentifier]);
 
-        try {
-            /** @var PixxioAssetSource $pixxioAssetSource */
-            $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
-            $pixxioClient = $pixxioAssetSource->getPixxioClient();
-        } catch (MissingClientSecretException) {
-            $this->outputLine('<error>Authentication error: Missing client secret</error>');
-            exit(1);
-        } catch (AuthenticationFailedException $exception) {
-            $this->outputLine('<error>Authentication error: %s</error>', [$exception->getMessage()]);
-            exit(1);
-        }
+        /** @var PixxioAssetSource $pixxioAssetSource */
+        $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
+        $pixxioClient = $pixxioAssetSource->getPixxioClient();
 
         if (!$pixxioAssetSource->isAutoTaggingEnabled()) {
             $this->outputLine('<error>Auto-tagging is disabled</error>');
@@ -149,7 +139,7 @@ class PixxioCommandController extends CommandController
 
         !$quiet && $this->outputLine('<b>Updating metadata of currently used assets from source "%s":</b>', [$assetSourceIdentifier]);
 
-        $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSource]['assetSourceOptions']);
+        $pixxioAssetSource = PixxioAssetSource::createFromConfiguration($assetSourceIdentifier, $this->assetSourcesConfiguration[$assetSourceIdentifier]['assetSourceOptions']);
 
         $assetProxyRepository = $pixxioAssetSource->getAssetProxyRepository();
         assert($assetProxyRepository instanceof PixxioAssetProxyRepository);
@@ -184,7 +174,7 @@ class PixxioCommandController extends CommandController
 
             if ($newCopyrightNotice !== $asset->getCopyrightNotice()) {
                 !$quiet && $this->outputLine('      <success>New copyright:   %s</success>', [$newCopyrightNotice]);
-                $asset->setTitle($newCopyrightNotice);
+                $asset->setCopyrightNotice($newCopyrightNotice);
                 $assetModified = true;
             }
 

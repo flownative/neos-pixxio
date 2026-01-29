@@ -18,9 +18,6 @@ use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxyQueryResultInterface;
 
-/**
- *
- */
 class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
 {
     private PixxioAssetProxyQuery $query;
@@ -64,7 +61,7 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
         return $this->assetProxies;
     }
 
-    public function current()
+    public function current(): mixed
     {
         $this->initialize();
         return $this->assetProxiesIterator->current();
@@ -76,7 +73,7 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
         $this->assetProxiesIterator->next();
     }
 
-    public function key()
+    public function key(): mixed
     {
         $this->initialize();
         return $this->assetProxiesIterator->key();
@@ -100,7 +97,7 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
         return $this->assetProxiesIterator->offsetExists($offset);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         $this->initialize();
         return $this->assetProxiesIterator->offsetGet($offset);
@@ -112,7 +109,7 @@ class PixxioAssetProxyQueryResult implements AssetProxyQueryResultInterface
         $this->assetProxiesIterator->offsetSet($offset, $value);
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
     }
 

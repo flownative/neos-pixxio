@@ -5,6 +5,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.0",
+        "ext-json": "*",
         "neos/flow": "^7.3 || ^8.0",
         "neos/media": "^7.3 || ^8.0",
         "guzzlehttp/guzzle": "^6.0 || ^7.0",

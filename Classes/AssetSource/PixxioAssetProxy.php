@@ -14,12 +14,12 @@ namespace Flownative\Pixxio\AssetSource;
  * source code.
  */
 
-use Behat\Transliterator\Transliterator;
 use Exception;
 use Flownative\Pixxio\Exception\ConnectionException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\Request;
 use Neos\Flow\Annotations as Flow;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\AssetProxyInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetProxy\HasRemoteOriginalInterface;
@@ -56,13 +56,13 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
 
     private UriInterface $previewUri;
 
-    private UriInterface $originalUri;
-
     private ?int $widthInPixels;
 
     private ?int $heightInPixels;
 
     private array $tags = [];
+
+    private UriInterface $scaledOriginalUri;
 
     /**
      * @Flow\Inject
@@ -75,56 +75,47 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
      */
     public static function fromJsonObject(stdClass $jsonObject, PixxioAssetSource $assetSource): PixxioAssetProxy
     {
-        $assetSourceOptions = $assetSource->getAssetSourceOptions();
-        $pixxioOriginalMediaType = MediaTypes::getMediaTypeFromFilename('foo.' . strtolower($jsonObject->fileType));
-        $usePixxioThumbnailAsOriginal = (!isset($assetSourceOptions['mediaTypes'][$pixxioOriginalMediaType]) || $assetSourceOptions['mediaTypes'][$pixxioOriginalMediaType]['usePixxioThumbnailAsOriginal'] === false);
-        $modifiedFileType = $usePixxioThumbnailAsOriginal ? 'jpg' : strtolower($jsonObject->fileType);
-
+        $mediaType = MediaTypes::getMediaTypeFromFilename(strtolower($jsonObject->fileName));
         $assetProxy = new static();
         $assetProxy->assetSource = $assetSource;
-        $assetProxy->identifier = $jsonObject->id;
+        $assetProxy->identifier = (string)$jsonObject->id;
         $assetProxy->label = $jsonObject->subject;
-        $assetProxy->filename = Transliterator::urlize($jsonObject->subject) . '.' . $modifiedFileType;
+        $assetProxy->filename = $jsonObject->fileName;
         $assetProxy->lastModified = new \DateTime($jsonObject->modifyDate ?? '1.1.2000');
         $assetProxy->fileSize = (int)$jsonObject->fileSize;
-        $assetProxy->mediaType = MediaTypes::getMediaTypeFromFilename('foo.' . $modifiedFileType);
-        $assetProxy->tags = isset($jsonObject->keywords) ? explode(',', $jsonObject->keywords) : [];
+        $assetProxy->mediaType = $mediaType;
+        $assetProxy->tags = $jsonObject->keywords ?? [];
 
         $assetProxy->iptcProperties['Title'] = $jsonObject->subject ?? '';
         $assetProxy->iptcProperties['CaptionAbstract'] = $jsonObject->description ?? '';
-        $assetProxy->iptcProperties['CopyrightNotice'] = $jsonObject->dynamicMetadata->CopyrightNotice ?? '';
+        $assetProxy->iptcProperties['CopyrightNotice'] = (string)self::extractMetadata($jsonObject->importantMetadata, 'iptc', 'CopyrightNotice');
 
-        $assetProxy->widthInPixels = $jsonObject->imageWidth ? (int)$jsonObject->imageWidth : null;
-        $assetProxy->heightInPixels = $jsonObject->imageHeight ? (int)$jsonObject->imageHeight : null;
+        $assetProxy->widthInPixels = $jsonObject->width ? (int)$jsonObject->width : null;
+        $assetProxy->heightInPixels = $jsonObject->height ? (int)$jsonObject->height : null;
 
-        if (isset($jsonObject->modifiedImagePaths)) {
-            $modifiedImagePaths = $jsonObject->modifiedImagePaths;
-            if (is_array($modifiedImagePaths)) {
-                if (isset($modifiedImagePaths[0])) {
-                    $assetProxy->thumbnailUri = new Uri($modifiedImagePaths[0]);
-                }
-                if (isset($modifiedImagePaths[1])) {
-                    $assetProxy->previewUri = new Uri($modifiedImagePaths[1]);
-                }
-                if (isset($modifiedImagePaths[2])) {
-                    $assetProxy->originalUri = new Uri($modifiedImagePaths[2]);
-                }
-            } elseif (is_object($modifiedImagePaths)) {
-                if (isset($modifiedImagePaths->{'0'})) {
-                    $assetProxy->thumbnailUri = new Uri($modifiedImagePaths->{'0'});
-                }
-                if (isset($modifiedImagePaths->{'1'})) {
-                    $assetProxy->previewUri = new Uri($modifiedImagePaths->{'1'});
-                }
-                if (isset($modifiedImagePaths->{'2'})) {
-                    $assetProxy->originalUri = new Uri($modifiedImagePaths->{'2'});
-                }
+        $modifiedPreviewFileURLs = $jsonObject->modifiedPreviewFileURLs;
+        if (isset($modifiedPreviewFileURLs[0])) {
+            $assetProxy->thumbnailUri = new Uri($modifiedPreviewFileURLs[0]);
+        }
+        if (isset($modifiedPreviewFileURLs[1])) {
+            $assetProxy->previewUri = new Uri($modifiedPreviewFileURLs[1]);
+        }
+        if (isset($modifiedPreviewFileURLs[2])) {
+            $assetProxy->scaledOriginalUri = new Uri($modifiedPreviewFileURLs[2]);
+        }
+
+        return $assetProxy;
+    }
+
+    private static function extractMetadata(array $importantMetadata, string $type, string $name): mixed
+    {
+        foreach ($importantMetadata as $importantMetadatum) {
+            if ($importantMetadatum->type === $type && $importantMetadatum->name === $name) {
+                return $importantMetadatum->value;
             }
         }
-        if (!$usePixxioThumbnailAsOriginal && isset($jsonObject->originalPath)) {
-            $assetProxy->originalUri = new Uri($jsonObject->originalPath);
-        }
-        return $assetProxy;
+
+        return null;
     }
 
     public function getAssetSource(): AssetSourceInterface
@@ -202,9 +193,33 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
      */
     public function getImportStream()
     {
-        $client = new Client($this->assetSource->getAssetSourceOptions()['apiClientOptions'] ?? []);
+        $mediaType = MediaTypes::getMediaTypeFromFilename(strtolower($this->filename));
+        $assetSourceOptions = $this->getAssetSource()->getAssetSourceOptions();
+
+        if (
+            isset($assetSourceOptions['mediaTypes'][$mediaType]['usePixxioThumbnailAsOriginal'])
+            && $assetSourceOptions['mediaTypes'][$mediaType]['usePixxioThumbnailAsOriginal'] === false
+        ) {
+            $importUri = (new Uri(sprintf('%s/files/%s/convert', rtrim($assetSourceOptions['apiEndpointUri'], '/'), $this->getIdentifier())))
+                ->withQuery(http_build_query([
+                    'downloadType' => 'original',
+                    'responseType' => 'binary'
+                ]));
+            $request = new Request(
+                'GET',
+                $importUri,
+                ['Authorization' => 'Bearer ' . $assetSourceOptions['apiKey']]
+            );
+        } else {
+            $request = new Request(
+                'GET',
+                $this->scaledOriginalUri
+            );
+        }
+
+        $client = new Client($assetSourceOptions['apiClientOptions'] ?? []);
         try {
-            $response = $client->request('GET', $this->originalUri);
+            $response = $client->send($request);
             if ($response->getStatusCode() === 200) {
                 return $response->getBody()->detach();
             }

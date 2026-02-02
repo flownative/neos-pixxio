@@ -34,7 +34,7 @@ use Neos\Media\Domain\Model\Tag;
 
 class PixxioAssetProxyRepository implements AssetProxyRepositoryInterface, SupportsSortingInterface, SupportsCollectionsInterface
 {
-    private const string CACHE_IDENTIFIER_DIRECTORIES_BY_PATH = 'pixxio-directories-by-path';
+    private const CACHE_IDENTIFIER_DIRECTORIES_BY_PATH = 'pixxio-directories-by-path';
 
     private PixxioAssetSource $assetSource;
 

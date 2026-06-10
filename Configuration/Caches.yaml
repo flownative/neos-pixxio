@@ -9,3 +9,9 @@ Flownative_Pixxio_Directories:
   backend: Neos\Cache\Backend\FileBackend
   backendOptions:
     defaultLifetime: 0
+
+Flownative_Pixxio_PageCursors:
+  frontend: Neos\Cache\Frontend\VariableFrontend
+  backend: Neos\Cache\Backend\FileBackend
+  backendOptions:
+    defaultLifetime: 60

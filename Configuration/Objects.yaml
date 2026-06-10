@@ -17,3 +17,10 @@ Flownative\Pixxio\AssetSource\PixxioAssetProxyQuery:
         arguments:
           1:
             value: Flownative_Pixxio_AssetProxy
+    pageCursorCache:
+      object:
+        factoryObjectName: Neos\Flow\Cache\CacheManager
+        factoryMethodName: getCache
+        arguments:
+          1:
+            value: Flownative_Pixxio_PageCursors

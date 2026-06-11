@@ -138,11 +138,16 @@ final class PixxioClient
      * @throws ConnectionException
      * @throws \JsonException
      */
-    public function search(string $queryExpression, string $formatType, array $fileTypes, int $directoryFilter = null, int $offset = 0, int $limit = 50, array $orderings = []): object
+    public function search(string $queryExpression, string $formatType, array $fileTypes, int $directoryFilter = null, string $pageCursor = '', int $limit = 50, array $orderings = []): object
     {
         $options = new \stdClass();
         $options->pageSize = $limit;
-        $options->page = (int)($offset / $limit + 1);
+        // Cursor-based pagination: the first page is requested without a cursor, subsequent
+        // pages use the "cursor" value returned in the previous response. The deprecated
+        // offset-based "page" parameter must not be used anymore (removed by pixx.io on 2026-06-10).
+        if ($pageCursor !== '') {
+            $options->pageCursor = $pageCursor;
+        }
         $options->previewFileOptions = json_encode($this->imageOptions, JSON_THROW_ON_ERROR);
         $options->responseFields = json_encode(self::$fields, JSON_THROW_ON_ERROR);
 

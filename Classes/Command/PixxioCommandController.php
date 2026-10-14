@@ -14,9 +14,12 @@ use Neos\Flow\Cli\CommandController;
 use Neos\Flow\Persistence\Exception\IllegalObjectTypeException;
 use Neos\Media\Domain\Model\Asset;
 use Neos\Media\Domain\Model\AssetCollection;
+use Neos\Media\Domain\Model\AssetSource\AssetNotFoundExceptionInterface;
 use Neos\Media\Domain\Model\AssetSource\AssetSourceAwareInterface;
+use Neos\Media\Domain\Model\ImportedAsset;
 use Neos\Media\Domain\Repository\AssetCollectionRepository;
 use Neos\Media\Domain\Repository\AssetRepository;
+use Neos\Media\Domain\Repository\ImportedAssetRepository;
 use Neos\Media\Domain\Service\AssetSourceService;
 
 class PixxioCommandController extends CommandController
@@ -30,6 +33,11 @@ class PixxioCommandController extends CommandController
      * @Flow\Inject
      */
     protected AssetSourceService $assetSourceService;
+
+    /**
+     * @Flow\Inject
+     */
+    protected ImportedAssetRepository $importedAssetRepository;
 
     /**
      * @Flow\Inject
@@ -92,7 +100,7 @@ class PixxioCommandController extends CommandController
 
         $iterator = $this->assetRepository->findAllIterator();
         foreach ($this->assetRepository->iterate($iterator) as $asset) {
-            $assetProxy = $this->getPixxioAssetProxy($asset, $assetSourceIdentifier);
+            $assetProxy = $this->getPixxioAssetProxy($asset, $assetSourceIdentifier, $assetProxyRepository);
             if ($assetProxy === null) {
                 continue;
             }
@@ -148,7 +156,7 @@ class PixxioCommandController extends CommandController
         $assetsWereUpdated = false;
 
         foreach ($this->assetRepository->iterate($iterator) as $asset) {
-            $assetProxy = $this->getPixxioAssetProxy($asset, $assetSourceIdentifier);
+            $assetProxy = $this->getPixxioAssetProxy($asset, $assetSourceIdentifier, $assetProxyRepository);
             if ($assetProxy === null) {
                 continue;
             }
@@ -178,6 +186,8 @@ class PixxioCommandController extends CommandController
                 $assetModified = true;
             }
 
+            $this->emitAssetMetadataUpdated($asset, $assetProxy);
+
             if ($assetModified) {
                 $this->assetRepository->update($asset);
                 $assetsWereUpdated = true;
@@ -186,7 +196,7 @@ class PixxioCommandController extends CommandController
 
         if ($assetsWereUpdated) {
             !$quiet && $this->outputLine();
-            !$quiet && $this->outputLine('💡 You may want to run ./flow flow:cache:flushone Neos_Fusion');
+            !$quiet && $this->outputLine('💡 You may want to run ./flow flow:cache:flushone Neos_Fusion_Content');
             !$quiet && $this->outputLine('   in order to make changes visible in the frontend');
         }
     }
@@ -267,7 +277,7 @@ class PixxioCommandController extends CommandController
         return false;
     }
 
-    private function getPixxioAssetProxy(mixed $asset, string $assetSourceIdentifier): ?PixxioAssetProxy
+    private function getPixxioAssetProxy(mixed $asset, string $assetSourceIdentifier, PixxioAssetProxyRepository $assetProxyRepository): ?PixxioAssetProxy
     {
         if (!$asset instanceof AssetSourceAwareInterface) {
             return null;
@@ -279,11 +289,19 @@ class PixxioCommandController extends CommandController
             return null;
         }
 
-        try {
-            $assetProxy = $asset->getAssetProxy();
-        } catch (AccessToAssetDeniedException $exception) {
-            $this->outputLine('   error   %s', [$exception->getMessage()]);
+        $importedAsset = $this->importedAssetRepository->findOneByLocalAssetIdentifier($asset->getIdentifier());
+        if (!$importedAsset instanceof ImportedAsset) {
+            $this->outputLine('   error   Asset "%s" (%s) has no pixx.io import record', [$asset->getLabel(), $asset->getIdentifier()]);
             return null;
+        }
+
+        try {
+            $assetProxy = $assetProxyRepository->getAssetProxy($importedAsset->getRemoteAssetIdentifier());
+        } catch (AccessToAssetDeniedException|ConnectionException $exception) {
+            $this->outputLine('   error   Asset "%s" (%s): %s', [$asset->getLabel(), $asset->getIdentifier(), $exception->getMessage()]);
+            return null;
+        } catch (AssetNotFoundExceptionInterface) {
+            $assetProxy = null;
         }
 
         if (!$assetProxy instanceof PixxioAssetProxy) {
@@ -292,5 +310,12 @@ class PixxioCommandController extends CommandController
         }
 
         return $assetProxy;
+    }
+
+    /**
+     * @Flow\Signal
+     */
+    protected function emitAssetMetadataUpdated(Asset $asset, PixxioAssetProxy $assetProxy): void
+    {
     }
 }

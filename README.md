@@ -262,6 +262,11 @@ Import done.
 The above would have added "Kunde A/Projekt 2", the items marked "=" exist already,
 and everything else is ignored.
 
+## AI disclosure
+
+`PixxioAssetProxy::getAiDisclosure()` returns the raw pixx.io field `aiDisclosure` (e.g. `unknown`, `composite`).
+`pixxio:updatemetadata` emits the signal `assetMetadataUpdated(Asset $asset, PixxioAssetProxy $assetProxy)` for every asset.
+
 ## Background and Demo
 
 [![Background and Demo](https://img.youtube.com/vi/nG05nn-Yd0I/0.jpg)](https://www.youtube.com/watch?v=nG05nn-Yd0I)

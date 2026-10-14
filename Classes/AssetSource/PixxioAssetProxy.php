@@ -64,6 +64,8 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
 
     private UriInterface $scaledOriginalUri;
 
+    private string $aiDisclosure = '';
+
     /**
      * @Flow\Inject
      * @var ImportedAssetRepository
@@ -89,6 +91,8 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
         $assetProxy->iptcProperties['Title'] = $jsonObject->subject ?? '';
         $assetProxy->iptcProperties['CaptionAbstract'] = $jsonObject->description ?? '';
         $assetProxy->iptcProperties['CopyrightNotice'] = (string)self::extractMetadata($jsonObject->importantMetadata, 'iptc', 'CopyrightNotice');
+
+        $assetProxy->aiDisclosure = (string)($jsonObject->aiDisclosure ?? '');
 
         $assetProxy->widthInPixels = $jsonObject->width ? (int)$jsonObject->width : null;
         $assetProxy->heightInPixels = $jsonObject->height ? (int)$jsonObject->height : null;
@@ -239,6 +243,11 @@ final class PixxioAssetProxy implements AssetProxyInterface, HasRemoteOriginalIn
     public function getTags(): array
     {
         return $this->tags;
+    }
+
+    public function getAiDisclosure(): string
+    {
+        return $this->aiDisclosure;
     }
 
     public function isImported(): bool
